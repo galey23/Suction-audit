@@ -199,7 +199,7 @@ function submitAudits() {
   const audits = [];
   blocks.forEach((block, index) => {
     const bedTitle = block.querySelector('h3').innerText;
-    const bedMatch = bedTitle.match(/Bed\\s+(\\d+)/i);
+    const bedMatch = bedTitle.match(/Bed\s+(\d+)/i);
     const bed = bedMatch ? bedMatch[1] : bedTitle;
 
     const answers = [];
@@ -207,7 +207,7 @@ function submitAudits() {
     const nonCompliant = [];
 
     block.querySelectorAll('.checklist-group').forEach((group, i) => {
-      const radios = group.querySelectorAll(\`input[name="q\${index}_\${i}"]\`);
+      const radios = group.querySelectorAll(`input[name="q${index}_${i}"]`);
       let picked = ""; radios.forEach(r => { if (r.checked) picked = r.value; });
       answers.push(picked);
       if (picked === "Yes") yesCount++; else if (picked === "No") nonCompliant.push(group.querySelector('label').innerText);
@@ -217,7 +217,7 @@ function submitAudits() {
     audits.push({ date, auditor, ward, bed, compliance, nonCompliantItems: nonCompliant.join("; ") || "None", answers });
   });
 
-  const filename = \`SuctionAudit_\${ward.replace(/[^\\w\\- ]+/g,"").replace(/\\s+/g,"_")}_\${date.replace(/\\//g,"-")}.csv\`;
+  const filename = `SuctionAudit_${ward.replace(/[^\w\- ]+/g,"").replace(/\s+/g,"_")}_${date.replace(/\//g,"-")}.csv`;
   downloadCSV(auditsToCSV(audits), filename);
 
   alert("Audit complete. CSV file downloaded.");
