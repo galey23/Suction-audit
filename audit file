@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Suction Equipment Audit</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin: auto; background: #f4f7f8; color: #222; }
+    h1 { text-align: center; color: #1c3c4c; }
+    label { font-weight: bold; display: block; margin-bottom: 5px; }
+    .form-group { margin-bottom: 15px; }
+    select, input[type="number"], input[type="text"] { width: 100%; padding: 12px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
+    .checklist-group { margin: 10px 0; padding-left: 10px; }
+    .checklist-group input[type="radio"] { margin-right: 10px; transform: scale(1.3); }
+    .audit-block { border: 1px solid #ccc; padding: 15px; margin-top: 20px; border-radius: 5px; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    button { background: #1c3c4c; color: #fff; padding: 12px 24px; border: none; border-radius: 6px; font-size: 18px; cursor: pointer; }
+    button:hover { background: #235067; }
+    .submit-wrapper { text-align: center; margin-top: 30px; }
+  </style>
+</head>
+<body>
+  <h1>Suction Equipment Audit</h1>
+
+  <form id="baseForm" onsubmit="return false;">
+    <div class="form-group">
+      <label for="auditor">Auditor Name:</label>
+      <select id="auditor" required>
+        <option value="">Select Auditor</option>
+        <option>Yorick</option><option>Duncan</option><option>Jessica</option><option>Bernard</option>
+        <option>Daniel</option><option>Nicole</option><option>Stephanie</option><option>Mario</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="date">Date:</label>
+      <input type="text" id="date" readonly>
+    </div>
+
+    <div class="form-group">
+      <label for="ward">Ward:</label>
+      <input type="text" id="ward" placeholder="Enter ward name" required>
+    </div>
+
+    <div class="form-group">
+      <label for="bedCount">Total Beds in Ward:</label>
+      <input type="number" id="bedCount" min="7" required>
+    </div>
+
+    <button type="button" onclick="generateAudits()">Generate Bed Audits</button>
+  </form>
+
+  <div id="auditContainer"></div>
+
+  <div class="submit-wrapper">
+    <button type="button" onclick="submitAudits()">Submit Ward Audit</button>
+  </div>
+
+<script>
+const QUESTIONS = [
+  "Suction regulator plugged in to point",
+  "Suction regulator functioning",
+  "Suction canister present next to bed side",
+  "Canister liner present",
+  "Canister liner tubing present",
+  "Liner tubing connected to suction regulator",
+  "Suction set achieves a minimum pressure of 80mmHG (10kPa)",
+  "Patient side tubing present - soft tip catheters (and/or) Yankeur",
+  "Compatible catheters present"
+];
+
+document.addEventListener("DOMContentLoaded", () => {
+  const today = new Date();
+  const formattedDate = today.toLocaleDateString('en-GB');
+  document.getElementById('date').value = formattedDate;
+});
+
+function generateAudits() {
+  const bedCount = parseInt(document.getElementById('bedCount').value);
+  const container = document.getElementById('auditContainer');
+
+  if (!bedCount || bedCount < 7) { alert("Please enter a valid bed count (minimum 7)."); return; }
+
+  container.innerHTML = '';
+  const bedNumbers = [];
+  while (bedNumbers.length < 7) {
+    const rand = Math.floor(Math.random() * bedCount) + 1;
+    if (!bedNumbers.includes(rand)) bedNumbers.push(rand);
+  }
+
+  bedNumbers.forEach((bedNum, index) => {
+    const div = document.createElement('div');
+    div.className = 'audit-block';
+    div.innerHTML = `
+      <h3>Audit ${index + 1}: Bed ${bedNum}</h3>
+      ${generateChecklistInputs(index)}
+    `;
+    container.appendChild(div);
+  });
+  window.scrollTo({ top: container.offsetTop - 10, behavior: 'smooth' });
+}
+
+function generateChecklistInputs(index) {
+  return QUESTIONS.map((q, i) => `
+    <div class="checklist-group">
+      <label>${q}</label><br>
+      <label><input type="radio" name="q${index}_${i}" value="Yes" required> Yes</label>
+      <label><input type="radio" name="q${index}_${i}" value="No"> No</label>
+    </div>
+  `).join('');
+}
+
+// ===== CSV helpers =====
+function csvEscape(val) {
+  if (val == null) return "";
+  const s = String(val);
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+}
+function auditsToCSV(audits) {
+  const header = ["Date","Auditor","Ward","Bed","Compliance (%)","Non-compliant Items"]
+                 .concat(QUESTIONS.map((_,i)=>`Q${i+1}`));
+  const lines = [header.map(csvEscape).join(",")];
+  audits.forEach(a => {
+    const row = [a.date, a.auditor, a.ward, a.bed, a.compliance, a.nonCompliantItems]
+      .map(csvEscape).concat((a.answers||[]).map(csvEscape));
+    lines.push(row.join(","));
+  });
+  return lines.join("\r\n");
+}
+function downloadCSV(csv, filename) {
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 0);
+}
+
+function submitAudits() {
+  const auditor = document.getElementById('auditor').value;
+  const date = document.getElementById('date').value;
+  const ward = document.getElementById('ward').value;
+  const blocks = document.querySelectorAll('.audit-block');
+  if (!auditor || !ward || blocks.length === 0) { alert("Please fill auditor, ward and generate the audits first."); return; }
+
+  const audits = [];
+  blocks.forEach((block, index) => {
+    const bedTitle = block.querySelector('h3').innerText;
+    const bedMatch = bedTitle.match(/Bed\s+(\d+)/i);
+    const bed = bedMatch ? bedMatch[1] : bedTitle;
+
+    const answers = [];
+    let yesCount = 0;
+    const nonCompliant = [];
+
+    block.querySelectorAll('.checklist-group').forEach((group, i) => {
+      const radios = group.querySelectorAll(`input[name="q${index}_${i}"]`);
+      let picked = ""; radios.forEach(r => { if (r.checked) picked = r.value; });
+      answers.push(picked);
+      if (picked === "Yes") yesCount++; else if (picked === "No") nonCompliant.push(group.querySelector('label').innerText);
+    });
+
+    const compliance = ((yesCount / QUESTIONS.length) * 100).toFixed(1);
+    audits.push({ date, auditor, ward, bed, compliance, nonCompliantItems: nonCompliant.join("; ") || "None", answers });
+  });
+
+  const filename = `SuctionAudit_${ward.replace(/[^\w\- ]+/g,"").replace(/\s+/g,"_")}_${date.replace(/\//g,"-")}.csv`;
+  downloadCSV(auditsToCSV(audits), filename);
+
+  alert("Audit complete. CSV file downloaded.");
+}
+</script>
+</body>
+</html>
