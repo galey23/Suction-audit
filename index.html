@@ -38,7 +38,51 @@
 
     <div class="form-group">
       <label for="ward">Ward:</label>
-      <input type="text" id="ward" placeholder="Enter ward name" required>
+      <select id="ward" required>
+        <option value="">Select Ward</option>
+        <option>Medical Assessment Unit 1</option>
+        <option>Medical Assessment Unit 2</option>
+        <option>Medical Assessment Unit 3</option>
+        <option>Diabetic Foot Ward</option>
+        <option>AMU</option>
+        <option>Surgical Assessment Unit 1</option>
+        <option>Medical 5</option>
+        <option>Medical 4</option>
+        <option>Infectious Disease Unit</option>
+        <option>Medical 2</option>
+        <option>Surgical Assessment Unit 2</option>
+        <option>Medical 9</option>
+        <option>Medical 1</option>
+        <option>Medical 3</option>
+        <option>CCCU</option>
+        <option>Cardiac Surgical</option>
+        <option>Cardiac Medical</option>
+        <option>Orthopaedic 2</option>
+        <option>Orthopaedic 1</option>
+        <option>Neuro Medical</option>
+        <option>Neuro Surgical</option>
+        <option>Surgical 2</option>
+        <option>Surgical 1</option>
+        <option>Stroke Unit</option>
+        <option>Surgical 3</option>
+        <option>Surgical 4</option>
+        <option>Orthopaedic 3</option>
+        <option>ENT</option>
+        <option>Surgical 5</option>
+        <option>Urology 1</option>
+        <option>Urology 2</option>
+        <option>Medical 7</option>
+        <option>Gynae</option>
+        <option>Medical 8</option>
+        <option>Medical 11 + NIV</option>
+        <option>Surgical HDU</option>
+        <option>MIU4</option>
+        <option>Renal Unit</option>
+        <option>Short Stay Unit</option>
+        <option>Medical 10</option>
+        <option>Medical HDU</option>
+        <option>MIU 3</option>
+      </select>
     </div>
 
     <div class="form-group">
@@ -128,12 +172,20 @@ function auditsToCSV(audits) {
 }
 function downloadCSV(csv, filename) {
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+
+  // iPhone-friendly: if download attribute is ignored, open in a new tab
+  const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if (iOS) {
+    const reader = new FileReader();
+    reader.onload = e => window.open(e.target.result, "_blank");
+    reader.readAsDataURL(blob);
+    return;
+  }
+
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
   setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 0);
 }
 
@@ -147,7 +199,7 @@ function submitAudits() {
   const audits = [];
   blocks.forEach((block, index) => {
     const bedTitle = block.querySelector('h3').innerText;
-    const bedMatch = bedTitle.match(/Bed\s+(\d+)/i);
+    const bedMatch = bedTitle.match(/Bed\\s+(\\d+)/i);
     const bed = bedMatch ? bedMatch[1] : bedTitle;
 
     const answers = [];
@@ -155,7 +207,7 @@ function submitAudits() {
     const nonCompliant = [];
 
     block.querySelectorAll('.checklist-group').forEach((group, i) => {
-      const radios = group.querySelectorAll(`input[name="q${index}_${i}"]`);
+      const radios = group.querySelectorAll(\`input[name="q\${index}_\${i}"]\`);
       let picked = ""; radios.forEach(r => { if (r.checked) picked = r.value; });
       answers.push(picked);
       if (picked === "Yes") yesCount++; else if (picked === "No") nonCompliant.push(group.querySelector('label').innerText);
@@ -165,7 +217,7 @@ function submitAudits() {
     audits.push({ date, auditor, ward, bed, compliance, nonCompliantItems: nonCompliant.join("; ") || "None", answers });
   });
 
-  const filename = `SuctionAudit_${ward.replace(/[^\w\- ]+/g,"").replace(/\s+/g,"_")}_${date.replace(/\//g,"-")}.csv`;
+  const filename = \`SuctionAudit_\${ward.replace(/[^\\w\\- ]+/g,"").replace(/\\s+/g,"_")}_\${date.replace(/\\//g,"-")}.csv\`;
   downloadCSV(auditsToCSV(audits), filename);
 
   alert("Audit complete. CSV file downloaded.");
