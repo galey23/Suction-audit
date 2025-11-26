@@ -283,6 +283,9 @@ function generateAudits() {
     if (!bedNumbers.includes(n)) bedNumbers.push(n);
   }
 
+  // NEW: sort bed numbers from smallest to largest for sensible walking order
+  bedNumbers.sort((a, b) => a - b);
+
   bedNumbers.forEach((bedNum, index) => {
     const div = document.createElement("div");
     div.className = "audit-block";
