@@ -21,14 +21,14 @@
 </head>
 <body>
   <div style="text-align: center; margin-bottom: 20px;">
-  <img src="MDH-Logo.jpg" 
-       alt="Mater Dei Hospital Logo" 
-       style="height: 90px; margin-right: 15px;">
-  
-  <img src="RRT Logo (no background).png" 
-       alt="Rapid Response Team Logo" 
-       style="height: 90px;">
-</div>
+    <img src="MDH-Logo.jpg" 
+         alt="Mater Dei Hospital Logo" 
+         style="height: 90px; margin-right: 15px;">
+    <img src="RRT Logo (no background).png" 
+         alt="Rapid Response Team Logo" 
+         style="height: 90px;">
+  </div>
+
   <h1>Suction Equipment Audit</h1>
 
   <form id="baseForm" onsubmit="return false;">
@@ -292,7 +292,7 @@ function generateAudits() {
     if (!bedNumbers.includes(n)) bedNumbers.push(n);
   }
 
-  // NEW: sort bed numbers from smallest to largest for sensible walking order
+  // sort bed numbers from smallest to largest for sensible walking order
   bedNumbers.sort((a, b) => a - b);
 
   bedNumbers.forEach((bedNum, index) => {
@@ -324,6 +324,7 @@ function csvEscape(val) {
   const s = String(val);
   return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
 }
+
 function auditsToCSV(audits) {
   const header = ["Date","Auditor","Ward","Bed","Compliance (%)","Non-compliant Items"]
                  .concat(QUESTIONS.map((_,i)=>`Q${i+1}`));
@@ -336,25 +337,58 @@ function auditsToCSV(audits) {
   return lines.join("\r\n");
 }
 
-// iPhone-friendly CSV download (opens a preview tab if <a download> is ignored)
+// Cross-platform CSV download / share
 function downloadCSV(csv, filename) {
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
 
-  const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  if (iOS) {
-    const reader = new FileReader();
-    reader.onload = e => window.open(e.target.result, "_blank"); // Share → Save to Files
-    reader.readAsDataURL(blob);
-    return;
+  const a = document.createElement("a");
+  const supportsDownloadAttr = "download" in a;
+  const ua = navigator.userAgent || "";
+  const isIOS = /iPad|iPhone|iPod/.test(ua);
+  const isAndroid = /Android/.test(ua);
+
+  // 1. DESKTOP + ANDROID: normal download
+  if (!isIOS && supportsDownloadAttr) {
+    const url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 0);
+    return { mode: "download" };
   }
 
+  // 2. iOS / ANDROID with Web Share API
+  if (navigator.share) {
+    try {
+      const file = new File([csv], filename, { type: "text/csv" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({
+          files: [file],
+          title: "Suction Audit Export",
+          text: "CSV export from Suction Equipment Audit"
+        });
+        return { mode: "share-file" };
+      }
+    } catch (e) {
+      // fall through
+    }
+
+    navigator.share({
+      title: "Suction Audit Export",
+      text: csv
+    }).catch(() => {});
+    return { mode: "share-text" };
+  }
+
+  // 3. LAST RESORT (mainly older iOS): open CSV in a new tab
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 0);
+  window.open(url, "_blank");
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  return { mode: "open-tab" };
 }
 
 function submitAudits() {
@@ -400,8 +434,20 @@ function submitAudits() {
   const safeDate = date.replace(/\//g,"-");
   const filename = `SuctionAudit_${safeWard}_${safeDate}.csv`;
 
-  downloadCSV(auditsToCSV(audits), filename);
-  alert("Audit complete. CSV file downloaded.");
+  const result = downloadCSV(auditsToCSV(audits), filename);
+
+  const ua = navigator.userAgent || "";
+  const isIOS = /iPad|iPhone|iPod/.test(ua);
+
+  if (result.mode === "download") {
+    alert("Audit complete. CSV file downloaded.");
+  } else if (result.mode === "share-file" || result.mode === "share-text") {
+    alert("Audit complete. Share sheet opened – choose where to save or send the CSV.");
+  } else if (isIOS && result.mode === "open-tab") {
+    alert("Audit complete. A new tab opened with the CSV – tap the Share button and choose “Save to Files”.");
+  } else {
+    alert("Audit complete. CSV opened in a new tab – use your browser’s Save function.");
+  }
 }
 </script>
 </body>
