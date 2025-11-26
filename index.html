@@ -16,6 +16,7 @@
     button { background: #1c3c4c; color: #fff; padding: 12px 24px; border: none; border-radius: 6px; font-size: 18px; cursor: pointer; }
     button:hover { background: #235067; }
     .submit-wrapper { text-align: center; margin-top: 30px; }
+    .hint { font-size: 0.9em; color: #555; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -34,6 +35,10 @@
         <option>Nicole</option>
         <option>Stephanie</option>
         <option>Mario</option>
+        <!-- New names -->
+        <option>Miriam</option>
+        <option>Josette</option>
+        <option>Clint</option>
       </select>
     </div>
 
@@ -46,54 +51,80 @@
       <label for="ward">Ward:</label>
       <select id="ward" required>
         <option value="">Select Ward</option>
-        <option>Medical Assessment Unit 1</option>
-        <option>Medical Assessment Unit 2</option>
-        <option>Medical Assessment Unit 3</option>
-        <option>Diabetic Foot Ward</option>
-        <option>AMU</option>
-        <option>Surgical Assessment Unit 1</option>
-        <option>Medical 5</option>
-        <option>Medical 4</option>
-        <option>Infectious Disease Unit</option>
-        <option>Medical 2</option>
-        <option>Surgical Assessment Unit 2</option>
-        <option>Medical 9</option>
-        <option>Medical 1</option>
-        <option>Medical 3</option>
-        <option>CCCU</option>
-        <option>Cardiac Surgical</option>
-        <option>Cardiac Medical</option>
-        <option>Orthopaedic 2</option>
-        <option>Orthopaedic 1</option>
-        <option>Neuro Medical</option>
-        <option>Neuro Surgical</option>
-        <option>Surgical 2</option>
-        <option>Surgical 1</option>
-        <option>Stroke Unit</option>
-        <option>Surgical 3</option>
-        <option>Surgical 4</option>
-        <option>Orthopaedic 3</option>
-        <option>ENT</option>
-        <option>Surgical 5</option>
-        <option>Urology 1</option>
-        <option>Urology 2</option>
-        <option>Medical 7</option>
-        <option>Gynae</option>
-        <option>Medical 8</option>
-        <option>Medical 11 + NIV</option>
-        <option>Surgical HDU</option>
+        <!-- Critical Care -->
+        <option>CCU</option>
+        <option>SHDU</option>
+        <option>NIV</option>
+        <!-- Medical -->
+        <option>MAU1</option>
+        <option>MAU2</option>
+        <option>MAU3</option>
+        <option>MW1</option>
+        <option>MW2</option>
+        <option>MW3</option>
+        <option>MW4</option>
+        <option>MW5</option>
+        <option>MW7</option>
+        <option>MW8</option>
+        <option>MW9</option>
+        <option>MW10</option>
+        <option>HDU</option>
+        <option>MW11</option>
+        <option>MIU3</option>
         <option>MIU4</option>
-        <option>Renal Unit</option>
-        <option>Short Stay Unit</option>
-        <option>Medical 10</option>
-        <option>Medical HDU</option>
-        <option>MIU 3</option>
+        <option>OBS1A</option>
+        <option>MOU</option>
+        <option>EVA</option>
+        <!-- Surgical -->
+        <option>PLASITICS</option>
+        <option>BRUNS</option>
+        <option>ORTHO 1</option>
+        <option>ORTHO 2</option>
+        <option>ORTHO 3</option>
+        <option>SAU1</option>
+        <option>SAU2</option>
+        <option>SW1</option>
+        <option>SW2</option>
+        <option>SW3</option>
+        <option>SW4</option>
+        <option>SW5</option>
+        <option>URO 1</option>
+        <option>URO 2</option>
+        <!-- Speciality Units -->
+        <option>CMW</option>
+        <option>CSW</option>
+        <option>DFW</option>
+        <option>ENT</option>
+        <option>IDU</option>
+        <option>STROKE WARD</option>
+        <option>NEURO MED</option>
+        <option>NEURO SURG</option>
+        <option>SSU</option>
+        <!-- OBGYN -->
+        <option>GYNE</option>
+        <option>EPU</option>
+        <option>OBS 1</option>
+        <option>OBS 2</option>
+        <option>OBS 3</option>
+        <!-- SAMOC -->
+        <option>HEAMATOLOGY</option>
+        <option>ONCO 1</option>
+        <option>ONCO 2</option>
+        <option>Day ward</option>
+        <option>PALLIATIVE</option>
+        <option>Renal Unitb</option>
       </select>
+      <div class="hint">Capacity and number of beds to audit will be auto-filled based on the selected ward.</div>
     </div>
 
     <div class="form-group">
       <label for="bedCount">Total Beds in Ward:</label>
-      <input type="number" id="bedCount" min="7" required />
+      <input type="number" id="bedCount" min="1" required />
+    </div>
+
+    <div class="form-group">
+      <label for="bedsToAudit">Beds to Audit (sample size):</label>
+      <input type="number" id="bedsToAudit" min="1" readonly />
     </div>
 
     <button type="button" onclick="generateAudits()">Generate Bed Audits</button>
@@ -118,26 +149,136 @@ const QUESTIONS = [
   "Compatible catheters present"
 ];
 
+// Ward configuration: capacity & number of beds to audit
+const WARD_CONFIG = {
+  // Critical Care
+  "CCU":           { capacity: 15, sample: 6 },
+  "SHDU":          { capacity: 8,  sample: 4 },
+  "NIV":           { capacity: 6,  sample: 3 },
+
+  // Medical
+  "MAU1":          { capacity: 35, sample: 14 },
+  "MAU2":          { capacity: 33, sample: 14 },
+  "MAU3":          { capacity: 23, sample: 10 },
+  "MW1":           { capacity: 25, sample: 10 },
+  "MW2":           { capacity: 25, sample: 10 },
+  "MW3":           { capacity: 24, sample: 10 },
+  "MW4":           { capacity: 25, sample: 10 },
+  "MW5":           { capacity: 39, sample: 16 },
+  "MW7":           { capacity: 19, sample: 8 },
+  "MW8":           { capacity: 15, sample: 6 },
+  "MW9":           { capacity: 23, sample: 10 },
+  "MW10":          { capacity: 30, sample: 12 },
+  "HDU":           { capacity: 10, sample: 4 },
+  "MW11":          { capacity: 30, sample: 12 },
+  "MIU3":          { capacity: 14, sample: 6 },
+  "MIU4":          { capacity: 24, sample: 10 },
+  "OBS1A":         { capacity: 10, sample: 4 },
+  "MOU":           { capacity: 13, sample: 6 },
+  "EVA":           { capacity: 20, sample: 8 },
+
+  // Surgical
+  "PLASITICS":     { capacity: 7,  sample: 3 },
+  "BRUNS":         { capacity: 4,  sample: 2 },
+  "ORTHO 1":       { capacity: 24, sample: 10 },
+  "ORTHO 2":       { capacity: 24, sample: 10 },
+  "ORTHO 3":       { capacity: 21, sample: 9 },
+  "SAU1":          { capacity: 20, sample: 8 },
+  "SAU2":          { capacity: 32, sample: 13 },
+  "SW1":           { capacity: 25, sample: 10 },
+  "SW2":           { capacity: 16, sample: 7 },
+  "SW3":           { capacity: 24, sample: 10 },
+  "SW4":           { capacity: 24, sample: 10 },
+  "SW5":           { capacity: 25, sample: 10 },
+  "URO 1":         { capacity: 25, sample: 10 },
+  "URO 2":         { capacity: 11, sample: 5 },
+
+  // Speciality Units
+  "CMW":           { capacity: 32, sample: 13 },
+  "CSW":           { capacity: 17, sample: 7 },
+  "DFW":           { capacity: 15, sample: 6 },
+  "ENT":           { capacity: 18, sample: 8 },
+  "IDU":           { capacity: 20, sample: 8 },
+  "STROKE WARD":   { capacity: 25, sample: 10 },
+  "NEURO MED":     { capacity: 23, sample: 10 },
+  "NEURO SURG":    { capacity: 19, sample: 8 },
+  "SSU":           { capacity: 29, sample: 12 },
+
+  // OBGYN
+  "GYNE":          { capacity: 11, sample: 5 },
+  "EPU":           { capacity: 6,  sample: 3 },
+  "OBS 1":         { capacity: 24, sample: 10 },
+  "OBS 2":         { capacity: 19, sample: 8 },
+  "OBS 3":         { capacity: 20, sample: 8 },
+
+  // SAMOC
+  "HEAMATOLOGY":   { capacity: 19, sample: 8 },
+  "ONCO 1":        { capacity: 19, sample: 8 },
+  "ONCO 2":        { capacity: 19, sample: 8 },
+  "Day ward":      { capacity: 45, sample: 18 },
+  "PALLIATIVE":    { capacity: 19, sample: 8 },
+  "Renal Unitb":   { capacity: 40, sample: 16 }
+};
+
 // Auto-fill date (dd/mm/yyyy EN-GB)
 document.addEventListener("DOMContentLoaded", () => {
   const today = new Date();
   const formattedDate = today.toLocaleDateString("en-GB");
   document.getElementById("date").value = formattedDate;
+
+  // When ward changes, auto-fill capacity & sample size
+  document.getElementById("ward").addEventListener("change", onWardChange);
 });
 
-// Generate 7 distinct random bed numbers from 1..bedCount
+function onWardChange() {
+  const ward = document.getElementById("ward").value;
+  const config = WARD_CONFIG[ward];
+  const bedCountInput = document.getElementById("bedCount");
+  const bedsToAuditInput = document.getElementById("bedsToAudit");
+
+  if (config) {
+    bedCountInput.value = config.capacity;
+    bedsToAuditInput.value = config.sample;
+  } else {
+    // If a ward is not in the config (fallback)
+    bedCountInput.value = "";
+    bedsToAuditInput.value = "";
+  }
+
+  // Clear any previously generated audits when ward changes
+  document.getElementById("auditContainer").innerHTML = "";
+}
+
+// Generate audits according to ward config
 function generateAudits() {
-  const bedCount = parseInt(document.getElementById("bedCount").value);
+  const ward = document.getElementById("ward").value;
+  const bedCount = parseInt(document.getElementById("bedCount").value, 10);
+  const bedsToAudit = parseInt(document.getElementById("bedsToAudit").value, 10);
   const container = document.getElementById("auditContainer");
 
-  if (!bedCount || bedCount < 7) {
-    alert("Please enter a valid bed count (minimum 7).");
+  if (!ward) {
+    alert("Please select a ward.");
+    return;
+  }
+
+  if (!bedCount || bedCount < 1) {
+    alert("Please ensure the total number of beds is valid.");
+    return;
+  }
+
+  if (!bedsToAudit || bedsToAudit < 1) {
+    alert("Please ensure the number of beds to audit is valid.");
+    return;
+  }
+
+  if (bedsToAudit > bedCount) {
+    alert("The number of beds to audit cannot exceed the ward capacity.");
     return;
   }
 
   container.innerHTML = "";
   const bedNumbers = [];
-  while (bedNumbers.length < 7) {
+  while (bedNumbers.length < bedsToAudit) {
     const n = Math.floor(Math.random() * bedCount) + 1;
     if (!bedNumbers.includes(n)) bedNumbers.push(n);
   }
@@ -211,7 +352,7 @@ function submitAudits() {
   const blocks = document.querySelectorAll(".audit-block");
 
   if (!auditor || !ward || blocks.length === 0) {
-    alert("Please fill auditor, ward and generate the audits first.");
+    alert("Please fill auditor, select ward and generate the audits first.");
     return;
   }
 
