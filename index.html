@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,15 +18,27 @@
     button:hover { background: #235067; }
     .submit-wrapper { text-align: center; margin-top: 30px; }
     .hint { font-size: 0.9em; color: #555; margin-top: 4px; }
+
+    /* --- ADDED: inline isolation selector next to Bed number, matching font --- */
+    .iso-inline { font-weight: normal; margin-left: 10px; }
+    .audit-block h3 select {
+      font-family: inherit;
+      font-size: inherit;
+      padding: 2px 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      width: auto;            /* keep it inline instead of full width */
+      vertical-align: middle; /* align with text */
+    }
   </style>
 </head>
 <body>
   <div style="text-align: center; margin-bottom: 20px;">
-    <img src="MDH-Logo.jpg" 
-         alt="Mater Dei Hospital Logo" 
+    <img src="MDH-Logo.jpg"
+         alt="Mater Dei Hospital Logo"
          style="height: 90px; margin-right: 15px;">
-    <img src="RRT Logo (no background).png" 
-         alt="Rapid Response Team Logo" 
+    <img src="RRT Logo (no background).png"
+         alt="Rapid Response Team Logo"
          style="height: 90px;">
   </div>
 
@@ -51,7 +64,6 @@
         <option>Justin PDN</option>
         <option>Luke PDN</option>
         <option>Kirstin PDN</option>
-
       </select>
     </div>
 
@@ -195,8 +207,6 @@ const WARD_CONFIG = {
   "Auxiliary Ward":{ capacity: 10, sample: 4 },
   "Endoscopy Medical":{ capacity: 10, sample: 4 },
 
-
-
   // Surgical
   "PLASITICS":     { capacity: 7,  sample: 3 },
   "BRUNS":         { capacity: 4,  sample: 2 },
@@ -237,7 +247,7 @@ const WARD_CONFIG = {
   "ONCO 2":        { capacity: 19, sample: 8 },
   "Day ward":      { capacity: 45, sample: 18 },
   "Palliative":    { capacity: 19, sample: 8 },
-  "Renal Unit":   { capacity: 40, sample: 16 }
+  "Renal Unit":    { capacity: 40, sample: 16 }
 };
 
 // Auto-fill date (dd/mm/yyyy EN-GB)
@@ -309,8 +319,19 @@ function generateAudits() {
   bedNumbers.forEach((bedNum, index) => {
     const div = document.createElement("div");
     div.className = "audit-block";
+
+    /* --- ADDED: isolation/single room selector next to Bed number --- */
     div.innerHTML = `
-      <h3>Audit ${index + 1}: Bed ${bedNum}</h3>
+      <h3>
+        Audit ${index + 1}: Bed ${bedNum}
+        <span class="iso-inline">| Single/Isolation room?
+          <select name="iso${index}" required>
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </span>
+      </h3>
       ${generateChecklistInputs(index)}
     `;
     container.appendChild(div);
@@ -337,11 +358,12 @@ function csvEscape(val) {
 }
 
 function auditsToCSV(audits) {
-  const header = ["Date","Auditor","Ward","Bed","Compliance (%)","Non-compliant Items"]
+  /* --- ADDED: "Single/Isolation Room" column --- */
+  const header = ["Date","Auditor","Ward","Bed","Single/Isolation Room","Compliance (%)","Non-compliant Items"]
                  .concat(QUESTIONS.map((_,i)=>`Q${i+1}`));
   const lines = [header.map(csvEscape).join(",")];
   audits.forEach(a => {
-    const row = [a.date, a.auditor, a.ward, a.bed, a.compliance, a.nonCompliantItems]
+    const row = [a.date, a.auditor, a.ward, a.bed, a.isolationRoom, a.compliance, a.nonCompliantItems]
       .map(csvEscape).concat((a.answers||[]).map(csvEscape));
     lines.push(row.join(","));
   });
@@ -414,10 +436,24 @@ function submitAudits() {
   }
 
   const audits = [];
-  blocks.forEach((block, index) => {
+
+  // NOTE: using a normal for-loop so we can safely "return" on validation errors.
+  for (let index = 0; index < blocks.length; index++) {
+    const block = blocks[index];
+
     const bedTitle = block.querySelector("h3").innerText;
     const bedMatch = bedTitle.match(/Bed\s+(\d+)/i);
     const bed = bedMatch ? bedMatch[1] : bedTitle;
+
+    /* --- ADDED: read isolation/single room selection --- */
+    const isoSelect = block.querySelector(`select[name="iso${index}"]`);
+    const isolationRoom = isoSelect ? isoSelect.value : "";
+
+    if (!isolationRoom) {
+      alert(`Please select Single/Isolation room = Yes/No for Bed ${bed}.`);
+      block.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
 
     const answers = [];
     let yesCount = 0;
@@ -435,11 +471,12 @@ function submitAudits() {
     const compliance = ((yesCount / QUESTIONS.length) * 100).toFixed(1);
     audits.push({
       date, auditor, ward, bed,
+      isolationRoom,                 // <--- ADDED
       compliance,
       nonCompliantItems: nonCompliant.join("; ") || "None",
       answers
     });
-  });
+  }
 
   const safeWard = ward.replace(/[^\w\- ]+/g,"").replace(/\s+/g,"_");
   const safeDate = date.replace(/\//g,"-");
