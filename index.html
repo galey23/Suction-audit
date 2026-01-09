@@ -76,7 +76,7 @@
       <select id="ward" required>
         <option value="">Select Ward</option>
         <!-- Critical Care -->
-        <option>Emergency Department</option>
+        <option>ED</option>
         <option>CCU</option>
         <option>SHDU</option>
         <option>NIV</option>
@@ -210,10 +210,88 @@ const QUESTIONS = [
   "Compatible catheters present"
 ];
 
+/* ============================
+   ED LOCATIONS (NEW)
+   - Cubicles 4..29
+   - 16, 22, 23 are doubled (A/B)
+   - Plus Decontamination Room, TH1, TH2
+   - Randomisation rules:
+     * Always include Decontamination Room
+     * Always include at least one of TH1/TH2
+     * Always include at least one of the doubled cubicles (16A/B or 22A/B or 23A/B)
+   ============================ */
+const ED_DOUBLED = ["Cubicle 16A","Cubicle 16B","Cubicle 22A","Cubicle 22B","Cubicle 23A","Cubicle 23B"];
+const ED_TH = ["TH1","TH2"];
+const ED_DECON = "Decontamination Room";
+
+// Build ED cubicle list 4..29, with special doubles
+const ED_LOCATIONS = (() => {
+  const out = [];
+  for (let n = 4; n <= 29; n++) {
+    if (n === 16) out.push("Cubicle 16A", "Cubicle 16B");
+    else if (n === 22) out.push("Cubicle 22A", "Cubicle 22B");
+    else if (n === 23) out.push("Cubicle 23A", "Cubicle 23B");
+    else out.push(`Cubicle ${n}`);
+  }
+  out.push(ED_DECON, ...ED_TH);
+  return out;
+})();
+
+function randPick(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// Sort for sensible “walking order” in ED
+function edSort(a, b) {
+  const parse = (s) => {
+    // Cubicle 16A etc.
+    const m = /^Cubicle\s+(\d+)([AB])?$/.exec(s);
+    if (m) return { group: 0, num: parseInt(m[1], 10), suf: m[2] || "" };
+
+    if (s === ED_DECON) return { group: 1, num: 0, suf: "" };
+    if (s === "TH1") return { group: 2, num: 1, suf: "" };
+    if (s === "TH2") return { group: 2, num: 2, suf: "" };
+
+    // fallback
+    return { group: 9, num: 0, suf: s };
+  };
+
+  const A = parse(a), B = parse(b);
+  if (A.group !== B.group) return A.group - B.group;
+  if (A.num !== B.num) return A.num - B.num;
+  if (A.suf !== B.suf) return (A.suf || "").localeCompare(B.suf || "");
+  return String(a).localeCompare(String(b));
+}
+
+function generateEDSelection(sampleSize) {
+  if (sampleSize < 3) {
+    // You asked for 3 compulsory picks; enforce a minimum of 3 to avoid impossible requests
+    throw new Error("ED sample size must be at least 3 to include Decontamination + TH + a doubled cubicle.");
+  }
+
+  const chosen = new Set();
+
+  // compulsory
+  chosen.add(ED_DECON);
+  chosen.add(randPick(ED_TH));
+  chosen.add(randPick(ED_DOUBLED));
+
+  // fill rest randomly from remaining ED locations
+  const pool = ED_LOCATIONS.filter(x => !chosen.has(x));
+  while (chosen.size < sampleSize) {
+    if (pool.length === 0) break; // safety
+    const idx = Math.floor(Math.random() * pool.length);
+    chosen.add(pool[idx]);
+    pool.splice(idx, 1);
+  }
+
+  return Array.from(chosen).sort(edSort);
+}
+
 // Ward configuration: capacity & number of beds to audit
 const WARD_CONFIG = {
   // Critical Care
-  "Emergency Department":     { capacity: 15, sample: 6 },
+  "ED":            { capacity: 35, sample: 14 },  // UPDATED as requested
   "CCU":           { capacity: 15, sample: 6 },
   "SHDU":          { capacity: 8,  sample: 4 },
   "NIV":           { capacity: 6,  sample: 3 },
@@ -333,28 +411,49 @@ function generateAudits() {
     return;
   }
 
-  if (bedsToAudit > bedCount) {
+  // ED uses a fixed location list (cubicles/rooms) rather than 1..bedCount
+  if (ward === "ED" && bedsToAudit > ED_LOCATIONS.length) {
+    alert(`ED has ${ED_LOCATIONS.length} selectable locations in the app. Reduce sample size.`);
+    return;
+  }
+
+  if (ward !== "ED" && bedsToAudit > bedCount) {
     alert("The number of beds to audit cannot exceed the ward capacity.");
     return;
   }
 
   container.innerHTML = "";
-  const bedNumbers = [];
-  while (bedNumbers.length < bedsToAudit) {
-    const n = Math.floor(Math.random() * bedCount) + 1;
-    if (!bedNumbers.includes(n)) bedNumbers.push(n);
+
+  let selections = [];
+
+  if (ward === "ED") {
+    try {
+      selections = generateEDSelection(bedsToAudit);
+    } catch (e) {
+      alert(e.message || "Could not generate ED sample.");
+      return;
+    }
+  } else {
+    // original numeric randomisation
+    const bedNumbers = [];
+    while (bedNumbers.length < bedsToAudit) {
+      const n = Math.floor(Math.random() * bedCount) + 1;
+      if (!bedNumbers.includes(n)) bedNumbers.push(n);
+    }
+    bedNumbers.sort((a, b) => a - b);
+    selections = bedNumbers.map(n => `Bed ${n}`);
   }
 
-  // sort bed numbers from smallest to largest for sensible walking order
-  bedNumbers.sort((a, b) => a - b);
-
-  bedNumbers.forEach((bedNum, index) => {
+  selections.forEach((label, index) => {
     const div = document.createElement("div");
     div.className = "audit-block";
 
+    // Store the identifier safely (avoids regex parsing issues)
+    div.dataset.bed = label;
+
     div.innerHTML = `
       <h3>
-        Audit ${index + 1}: Bed ${bedNum}
+        Audit ${index + 1}: ${label}
         <span class="iso-inline">| Single/Isolation room?
           <select name="iso${index}" required>
             <option value="">Select</option>
@@ -454,7 +553,7 @@ function downloadCSV(csv, filename) {
 }
 
 /* ============================
-   SUBMIT: now sends to flow
+   SUBMIT: sends to flow
    ============================ */
 async function submitAudits() {
   const auditor = document.getElementById("auditor").value;
@@ -472,15 +571,14 @@ async function submitAudits() {
   for (let index = 0; index < blocks.length; index++) {
     const block = blocks[index];
 
-    const bedTitle = block.querySelector("h3").innerText;
-    const bedMatch = bedTitle.match(/Bed\s+(\d+)/i);
-    const bed = bedMatch ? bedMatch[1] : bedTitle;
+    // Works for BOTH normal wards and ED (no regex needed)
+    const bed = block.dataset.bed || (block.querySelector("h3")?.innerText || `Audit ${index+1}`);
 
     const isoSelect = block.querySelector(`select[name="iso${index}"]`);
     const isolationRoom = isoSelect ? isoSelect.value : "";
 
     if (!isolationRoom) {
-      alert(`Please select Single/Isolation room = Yes/No for Bed ${bed}.`);
+      alert(`Please select Single/Isolation room = Yes/No for ${bed}.`);
       block.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
