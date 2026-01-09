@@ -76,6 +76,7 @@
       <select id="ward" required>
         <option value="">Select Ward</option>
         <!-- Critical Care -->
+        <option>Emergency Department</option>
         <option>CCU</option>
         <option>SHDU</option>
         <option>NIV</option>
@@ -100,7 +101,6 @@
         <option>MOU</option>
         <option>EVA</option>
         <option>Auxiliary Ward</option>
-        <option>Endoscopy medical</option>
         <!-- Surgical -->
         <option>PLASITICS</option>
         <option>BRUNS</option>
@@ -213,7 +213,7 @@ const QUESTIONS = [
 // Ward configuration: capacity & number of beds to audit
 const WARD_CONFIG = {
   // Critical Care
-  "ED Area 1":     { capacity: 15, sample: 6 },
+  "Emergency Department":     { capacity: 15, sample: 6 },
   "CCU":           { capacity: 15, sample: 6 },
   "SHDU":          { capacity: 8,  sample: 4 },
   "NIV":           { capacity: 6,  sample: 3 },
@@ -239,9 +239,6 @@ const WARD_CONFIG = {
   "MOU":           { capacity: 13, sample: 6 },
   "EVA":           { capacity: 20, sample: 8 },
   "Auxiliary Ward":{ capacity: 10, sample: 4 },
-
-  /* FIX: match the dropdown text exactly ("Endoscopy medical") */
-  "Endoscopy medical": { capacity: 10, sample: 4 },
 
   // Surgical
   "PLASITICS":     { capacity: 7,  sample: 3 },
