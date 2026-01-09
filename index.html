@@ -62,7 +62,7 @@
         <option>Mario PDN</option>
         <option>Justin PDN</option>
         <option>Luke PDN</option>
-        <option>Kirstin PDN</option>
+        <option>Kristin PDN</option>
       </select>
     </div>
 
@@ -199,20 +199,21 @@ async function postToFlow(payload) {
 }
 
 const QUESTIONS = [
-  "High suction regulator plugged in to point",
-  "Suction regulator functioning",
+  "High suction regulator is present & plugged in to point",
+  "Suction regulator functioning well: device turns on and audidible suction present",
+  "Suction regulator achives a pressure of 100mmHg (13kPa OR 1.934psi OR 136.0cmH₂O)",
   "Suction canister present next to bed side",
   "Canister liner present",
   "Canister liner tubing present",
   "Liner tubing connected to suction regulator",
-  "Suction set achieves a minimum pressure of 80mmHG (10kPa)",
-  "Patient side tubing present - soft tip catheters (and/or) Yankeur",
+  "Patient side tubing present",
   "Compatible catheters present"
 ];
 
 // Ward configuration: capacity & number of beds to audit
 const WARD_CONFIG = {
   // Critical Care
+  "ED Area 1":     { capacity: 15, sample: 6 },
   "CCU":           { capacity: 15, sample: 6 },
   "SHDU":          { capacity: 8,  sample: 4 },
   "NIV":           { capacity: 6,  sample: 3 },
