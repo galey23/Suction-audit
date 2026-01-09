@@ -211,82 +211,168 @@ const QUESTIONS = [
 ];
 
 /* ============================
-   ED LOCATIONS (NEW)
-   - Cubicles 4..29
-   - 16, 22, 23 are doubled (A/B)
-   - Plus Decontamination Room, TH1, TH2
-   - Randomisation rules:
-     * Always include Decontamination Room
-     * Always include at least one of the doubled cubicles (16B or 22B or 23B)
-   ============================ */
-const ED_DOUBLED = ["Cubicle 16A","Cubicle 16B","Cubicle 22A","Cubicle 22B","Cubicle 23A","Cubicle 23B"];
-const ED_TH = ["TH1","TH2"];
+   ED LOCATIONS
+   ED split:
+   Area 1: Decontamination Room + Cubicle 8..15
+   Area 2: 16A/16B, 17..21, 22A/22B, 23A/23B + TH2
+   Area 3: Cubicle 24..29 + TH1 + Cubicle 4 + 5
+
+   Rules (ENFORCED):
+   - Always include Decontamination Room (Area 1)
+   - Always include at least TWO of: Cubicle 16B, Cubicle 22B, Cubicle 23B (Area 2)
+   - Ensure Area 1, Area 2, and Area 3 are all represented
+   - Remaining picks random, no duplicates
+============================ */
+
 const ED_DECON = "Decontamination Room";
 
-// Build ED cubicle list 4..29, with special doubles
-const ED_LOCATIONS = (() => {
-  const out = [];
-  for (let n = 4; n <= 29; n++) {
-    if (n === 16) out.push("Cubicle 16A", "Cubicle 16B");
-    else if (n === 22) out.push("Cubicle 22A", "Cubicle 22B");
-    else if (n === 23) out.push("Cubicle 23A", "Cubicle 23B");
-    else out.push(`Cubicle ${n}`);
-  }
-  out.push(ED_DECON, ...ED_TH);
+// Area 1
+const ED_AREA1 = (() => {
+  const out = [ED_DECON];
+  for (let n = 8; n <= 15; n++) out.push(`Cubicle ${n}`);
   return out;
 })();
 
+// Area 2
+const ED_AREA2 = (() => {
+  const out = [];
+  out.push("Cubicle 16A", "Cubicle 16B");
+  for (let n = 17; n <= 21; n++) out.push(`Cubicle ${n}`);
+  out.push("Cubicle 22A", "Cubicle 22B");
+  out.push("Cubicle 23A", "Cubicle 23B");
+  out.push("TH2");
+  return out;
+})();
+
+// Area 3
+const ED_AREA3 = (() => {
+  const out = ["Cubicle 4", "Cubicle 5"];
+  for (let n = 24; n <= 29; n++) out.push(`Cubicle ${n}`);
+  out.push("TH1");
+  return out;
+})();
+
+// Must pick >=2 of these (Area 2)
+const ED_B_SIDES = ["Cubicle 16B", "Cubicle 22B", "Cubicle 23B"];
+
+// Full ED pool
+const ED_LOCATIONS = Array.from(new Set([...ED_AREA1, ...ED_AREA2, ...ED_AREA3]));
+
+// Helpers
 function randPick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
+function randPickN(arr, n) {
+  const copy = arr.slice();
+  const picks = [];
+  while (picks.length < n && copy.length) {
+    const idx = Math.floor(Math.random() * copy.length);
+    picks.push(copy[idx]);
+    copy.splice(idx, 1);
+  }
+  return picks;
+}
 
-// Sort for sensible “walking order” in ED
+// Sort: Area 1 first, then Area 2, then Area 3 (nice for walking order)
 function edSort(a, b) {
+  const areaOf = (s) => {
+    if (ED_AREA1.includes(s)) return 1;
+    if (ED_AREA2.includes(s)) return 2;
+    if (ED_AREA3.includes(s)) return 3;
+    return 9;
+  };
+
+  const Aarea = areaOf(a);
+  const Barea = areaOf(b);
+  if (Aarea !== Barea) return Aarea - Barea;
+
+  // Within area: cubicle number order where possible, then TH, then Decon
   const parse = (s) => {
-    // Cubicle 16A etc.
     const m = /^Cubicle\s+(\d+)([AB])?$/.exec(s);
     if (m) return { group: 0, num: parseInt(m[1], 10), suf: m[2] || "" };
-
     if (s === ED_DECON) return { group: 1, num: 0, suf: "" };
     if (s === "TH1") return { group: 2, num: 1, suf: "" };
     if (s === "TH2") return { group: 2, num: 2, suf: "" };
-
-    // fallback
     return { group: 9, num: 0, suf: s };
   };
 
   const A = parse(a), B = parse(b);
   if (A.group !== B.group) return A.group - B.group;
   if (A.num !== B.num) return A.num - B.num;
-  if (A.suf !== B.suf) return (A.suf || "").localeCompare(B.suf || "");
-  return String(a).localeCompare(String(b));
+  return (A.suf || "").localeCompare(B.suf || "");
 }
 
 function generateEDSelection(sampleSize) {
-  if (sampleSize < 3) {
-    // You asked for 3 compulsory picks; enforce a minimum of 3 to avoid impossible requests
-    throw new Error("ED sample size must be at least 3 to include Decontamination + TH + a doubled cubicle.");
+  // Minimum needed:
+  // - Decon (Area 1) = 1
+  // - Two B-sides (Area 2) = 2
+  // - One Area 3 location = 1
+  // Total minimum = 4
+  if (sampleSize < 4) {
+    throw new Error("ED sample size must be at least 4 (Area 1 + two B-sides in Area 2 + Area 3).");
+  }
+  if (sampleSize > ED_LOCATIONS.length) {
+    throw new Error(`ED sample size too large. Max ED locations in app = ${ED_LOCATIONS.length}.`);
   }
 
   const chosen = new Set();
 
-  // compulsory
-  chosen.add(ED_DECON);
-  chosen.add(randPick(ED_TH));
-  chosen.add(randPick(ED_DOUBLED));
+  // --- ENFORCE AREA 1 ---
+  chosen.add(ED_DECON); // Always Decon, counts as Area 1
 
-  // fill rest randomly from remaining ED locations
+  // --- ENFORCE AREA 2 ---
+  randPickN(ED_B_SIDES, 2).forEach(x => chosen.add(x)); // two B-sides
+
+  // --- ENFORCE AREA 3 ---
+  chosen.add(randPick(ED_AREA3));
+
+  // Safety: If someone edits the lists later, double-check representation
+  const hasArea1 = () => Array.from(chosen).some(x => ED_AREA1.includes(x));
+  const hasArea2 = () => Array.from(chosen).some(x => ED_AREA2.includes(x));
+  const hasArea3 = () => Array.from(chosen).some(x => ED_AREA3.includes(x));
+
+  // Fill remaining slots randomly
   const pool = ED_LOCATIONS.filter(x => !chosen.has(x));
-  while (chosen.size < sampleSize) {
-    if (pool.length === 0) break; // safety
+  while (chosen.size < sampleSize && pool.length) {
     const idx = Math.floor(Math.random() * pool.length);
     chosen.add(pool[idx]);
     pool.splice(idx, 1);
   }
 
+  // Final enforcement (only needed if sampleSize was tiny or lists changed)
+  // Replace random picks if any area missing (should not happen with above rules)
+  if (!hasArea1()) chosen.add(ED_DECON);
+  if (!hasArea2()) chosen.add(randPick(ED_AREA2));
+  if (!hasArea3()) chosen.add(randPick(ED_AREA3));
+
+  // If we accidentally exceeded sampleSize due to enforcement, trim non-mandatory picks
+  // (Keep: Decon, at least 2 B-sides, and 1 Area 3)
+  if (chosen.size > sampleSize) {
+    const mustKeep = new Set([ED_DECON]);
+
+    // Keep exactly 2 B-sides (if 3 got picked somehow, allow trimming later)
+    ED_B_SIDES.forEach(x => { if (chosen.has(x)) mustKeep.add(x); });
+    // Ensure at least 2 B-sides in mustKeep
+    const bPresent = ED_B_SIDES.filter(x => chosen.has(x));
+    const bKeep = bPresent.slice(0, 2);
+    mustKeep.clear();
+    mustKeep.add(ED_DECON);
+    bKeep.forEach(x => mustKeep.add(x));
+
+    // Keep one Area 3 item
+    const a3Present = ED_AREA3.filter(x => chosen.has(x));
+    if (a3Present.length) mustKeep.add(a3Present[0]);
+
+    // Trim extras
+    const arr = Array.from(chosen);
+    for (const x of arr) {
+      if (chosen.size <= sampleSize) break;
+      if (!mustKeep.has(x)) chosen.delete(x);
+    }
+  }
+
   return Array.from(chosen).sort(edSort);
 }
-
 // Ward configuration: capacity & number of beds to audit
 const WARD_CONFIG = {
   // Critical Care
