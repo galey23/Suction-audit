@@ -18,7 +18,7 @@
     .submit-wrapper { text-align: center; margin-top: 30px; }
     .hint { font-size: 0.9em; color: #555; margin-top: 4px; }
 
-    /* --- inline isolation selector next to Bed number --- */
+    /* --- inline isolation selector next to Bed number, matching font --- */
     .iso-inline { font-weight: normal; margin-left: 10px; }
     .audit-block h3 select {
       font-family: inherit;
@@ -159,16 +159,17 @@
   <div id="auditContainer"></div>
 
   <div class="submit-wrapper">
-    <button id="submitBtn" type="button" onclick="submitAudits()">Submit Ward Audit</button>
+    <button type="button" onclick="submitAudits()">Submit Ward Audit</button>
   </div>
 
 <script>
 /* ============================
-   POWER AUTOMATE CONFIG (NEW)
+   POWER AUTOMATE (ANYONE + SIG)
    ============================ */
-const FLOW_URL = "PASTE_YOUR_POWER_AUTOMATE_TRIGGER_URL_HERE"; // <-- paste your flow URL here
-const FLOW_TIMEOUT_MS = 25000; // fail fast if offline / blocked
+const FLOW_URL = "https://default34cdd9f55db849bcacba01f65cca68.0d.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ca817088bd6043a187a67a935e85c10e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Dc7DZx1A16KJ29fbIyygPEH1abfDOz41gnjCN7LEBCo";
+const FLOW_TIMEOUT_MS = 25000;
 
+// UTF-8 safe base64
 function toBase64Utf8(str) {
   const bytes = new TextEncoder().encode(str);
   let binary = "";
@@ -177,10 +178,6 @@ function toBase64Utf8(str) {
 }
 
 async function postToFlow(payload) {
-  if (!FLOW_URL || FLOW_URL.includes("PASTE_YOUR_POWER_AUTOMATE")) {
-    throw new Error("FLOW_URL not set. Paste your Power Automate trigger URL into FLOW_URL.");
-  }
-
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), FLOW_TIMEOUT_MS);
 
@@ -241,7 +238,9 @@ const WARD_CONFIG = {
   "MOU":           { capacity: 13, sample: 6 },
   "EVA":           { capacity: 20, sample: 8 },
   "Auxiliary Ward":{ capacity: 10, sample: 4 },
-  "Endoscopy Medical":{ capacity: 10, sample: 4 }, // NOTE: option text is "Endoscopy medical" (lowercase m)
+
+  /* FIX: match the dropdown text exactly ("Endoscopy medical") */
+  "Endoscopy medical": { capacity: 10, sample: 4 },
 
   // Surgical
   "PLASITICS":     { capacity: 7,  sample: 3 },
@@ -310,6 +309,7 @@ function onWardChange() {
     bedsToAuditInput.value = "";
   }
 
+  // Clear any previously generated audits when ward changes
   document.getElementById("auditContainer").innerHTML = "";
 }
 
@@ -320,10 +320,25 @@ function generateAudits() {
   const bedsToAudit = parseInt(document.getElementById("bedsToAudit").value, 10);
   const container = document.getElementById("auditContainer");
 
-  if (!ward) { alert("Please select a ward."); return; }
-  if (!bedCount || bedCount < 1) { alert("Please ensure the total number of beds is valid."); return; }
-  if (!bedsToAudit || bedsToAudit < 1) { alert("Please ensure the number of beds to audit is valid."); return; }
-  if (bedsToAudit > bedCount) { alert("The number of beds to audit cannot exceed the ward capacity."); return; }
+  if (!ward) {
+    alert("Please select a ward.");
+    return;
+  }
+
+  if (!bedCount || bedCount < 1) {
+    alert("Please ensure the total number of beds is valid.");
+    return;
+  }
+
+  if (!bedsToAudit || bedsToAudit < 1) {
+    alert("Please ensure the number of beds to audit is valid.");
+    return;
+  }
+
+  if (bedsToAudit > bedCount) {
+    alert("The number of beds to audit cannot exceed the ward capacity.");
+    return;
+  }
 
   container.innerHTML = "";
   const bedNumbers = [];
@@ -332,6 +347,7 @@ function generateAudits() {
     if (!bedNumbers.includes(n)) bedNumbers.push(n);
   }
 
+  // sort bed numbers from smallest to largest for sensible walking order
   bedNumbers.sort((a, b) => a - b);
 
   bedNumbers.forEach((bedNum, index) => {
@@ -395,6 +411,7 @@ function downloadCSV(csv, filename) {
   const ua = navigator.userAgent || "";
   const isIOS = /iPad|iPhone|iPod/.test(ua);
 
+  // 1. DESKTOP + ANDROID: normal download
   if (!isIOS && supportsDownloadAttr) {
     const url = URL.createObjectURL(blob);
     a.href = url;
@@ -408,6 +425,7 @@ function downloadCSV(csv, filename) {
     return { mode: "download" };
   }
 
+  // 2. iOS / ANDROID with Web Share API
   if (navigator.share) {
     try {
       const file = new File([csv], filename, { type: "text/csv" });
@@ -419,12 +437,18 @@ function downloadCSV(csv, filename) {
         });
         return { mode: "share-file" };
       }
-    } catch (e) {}
+    } catch (e) {
+      // fall through
+    }
 
-    navigator.share({ title: "Suction Audit Export", text: csv }).catch(() => {});
+    navigator.share({
+      title: "Suction Audit Export",
+      text: csv
+    }).catch(() => {});
     return { mode: "share-text" };
   }
 
+  // 3. LAST RESORT (mainly older iOS): open CSV in a new tab
   const url = URL.createObjectURL(blob);
   window.open(url, "_blank");
   setTimeout(() => URL.revokeObjectURL(url), 60000);
@@ -432,14 +456,13 @@ function downloadCSV(csv, filename) {
 }
 
 /* ============================
-   SUBMIT: now emails via flow
+   SUBMIT: now sends to flow
    ============================ */
 async function submitAudits() {
   const auditor = document.getElementById("auditor").value;
   const date = document.getElementById("date").value;
   const ward = document.getElementById("ward").value;
   const blocks = document.querySelectorAll(".audit-block");
-  const submitBtn = document.getElementById("submitBtn");
 
   if (!auditor || !ward || blocks.length === 0) {
     alert("Please fill auditor, select ward and generate the audits first.");
@@ -493,10 +516,6 @@ async function submitAudits() {
 
   const csv = auditsToCSV(audits);
 
-  // Disable button while sending (prevents double submits)
-  const oldBtnText = submitBtn ? submitBtn.innerText : "";
-  if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = "Sending..."; }
-
   try {
     await postToFlow({
       date,
@@ -510,13 +529,13 @@ async function submitAudits() {
   } catch (e) {
     console.error(e);
 
-    // Fallback to local download/share if flow call fails
+    // Fallback: keep your existing export behaviour if flow fails
     const result = downloadCSV(csv, filename);
     const ua = navigator.userAgent || "";
     const isIOS = /iPad|iPhone|iPod/.test(ua);
 
     if (result.mode === "download") {
-      alert("Could not send email (network/flow/CORS issue). CSV downloaded instead.");
+      alert("Could not send email (network/flow/CORS issue). CSV file downloaded instead.");
     } else if (result.mode === "share-file" || result.mode === "share-text") {
       alert("Could not send email. Share sheet opened – choose where to save or send the CSV.");
     } else if (isIOS && result.mode === "open-tab") {
@@ -524,8 +543,6 @@ async function submitAudits() {
     } else {
       alert("Could not send email. CSV opened in a new tab – use your browser’s Save function.");
     }
-  } finally {
-    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = oldBtnText; }
   }
 }
 </script>
