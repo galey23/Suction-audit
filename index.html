@@ -245,17 +245,23 @@ const QUESTIONS = [
 
 /* ============================
    ED LOCATIONS (FINAL)
-   ============================ */
+   Area 1: Decontamination Room + Cubicle 8..15
+   Area 2: 16A/16B, 17..21, 22A/22B, 23A/23B + TH2
+   Area 3: Cubicle 24..29 + TH1 + Cubicle 4 + 5
+
+   Rules:
+   - Always include Decontamination Room
+   - Always include at least TWO of: Cubicle 16B, Cubicle 22B, Cubicle 23B
+   - Ensure Area 1, Area 2, Area 3 all represented
+============================ */
 const ED_DECON = "Decontamination Room";
 
-// Area 1
 const ED_AREA1 = (() => {
   const out = [ED_DECON];
   for (let n = 8; n <= 15; n++) out.push(`Cubicle ${n}`);
   return out;
 })();
 
-// Area 2
 const ED_AREA2 = (() => {
   const out = [];
   out.push("Cubicle 16A", "Cubicle 16B");
@@ -266,7 +272,6 @@ const ED_AREA2 = (() => {
   return out;
 })();
 
-// Area 3
 const ED_AREA3 = (() => {
   const out = ["Cubicle 4", "Cubicle 5"];
   for (let n = 24; n <= 29; n++) out.push(`Cubicle ${n}`);
@@ -274,13 +279,9 @@ const ED_AREA3 = (() => {
   return out;
 })();
 
-// Must pick >=2 of these (Area 2)
 const ED_B_SIDES = ["Cubicle 16B", "Cubicle 22B", "Cubicle 23B"];
-
-// Full ED pool
 const ED_LOCATIONS = Array.from(new Set([...ED_AREA1, ...ED_AREA2, ...ED_AREA3]));
 
-// Helpers
 function randPick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 function randPickN(arr, n) {
   const copy = arr.slice();
@@ -293,7 +294,6 @@ function randPickN(arr, n) {
   return picks;
 }
 
-// Sort: Area 1 then Area 2 then Area 3
 function edSort(a, b) {
   const areaOf = (s) => {
     if (ED_AREA1.includes(s)) return 1;
@@ -325,16 +325,16 @@ function generateEDSelection(sampleSize) {
 
   const chosen = new Set();
 
-  // Enforce Area 1
+  // Force Area 1
   chosen.add(ED_DECON);
 
-  // Enforce Area 2 (two B-sides)
+  // Force 2x B-sides (Area 2)
   randPickN(ED_B_SIDES, 2).forEach(x => chosen.add(x));
 
-  // Enforce Area 3
+  // Force Area 3 (at least one pick)
   chosen.add(randPick(ED_AREA3));
 
-  // Fill remaining randomly
+  // Fill remainder
   const pool = ED_LOCATIONS.filter(x => !chosen.has(x));
   while (chosen.size < sampleSize && pool.length) {
     const idx = Math.floor(Math.random() * pool.length);
@@ -342,7 +342,7 @@ function generateEDSelection(sampleSize) {
     pool.splice(idx, 1);
   }
 
-  // If enforcement pushed over sampleSize, trim non-mandatory picks
+  // Trim if over
   if (chosen.size > sampleSize) {
     const mustKeep = new Set([ED_DECON]);
     ED_B_SIDES.filter(x => chosen.has(x)).slice(0, 2).forEach(x => mustKeep.add(x));
@@ -358,7 +358,7 @@ function generateEDSelection(sampleSize) {
   return Array.from(chosen).sort(edSort);
 }
 
-// Ward configuration: capacity & sample sizes
+/* Ward configuration */
 const WARD_CONFIG = {
   "ED":            { capacity: 35, sample: 14 },
   "CCU":           { capacity: 15, sample: 6 },
@@ -427,8 +427,7 @@ const WARD_CONFIG = {
 
 // Auto-fill date
 document.addEventListener("DOMContentLoaded", () => {
-  const today = new Date();
-  document.getElementById("date").value = today.toLocaleDateString("en-GB");
+  document.getElementById("date").value = new Date().toLocaleDateString("en-GB");
   document.getElementById("ward").addEventListener("change", onWardChange);
 });
 
@@ -510,42 +509,62 @@ function generateChecklistInputs(index) {
   `).join("");
 }
 
-// ---- CSV helpers ----
+/* CSV helpers */
 function csvEscape(val) {
   if (val == null) return "";
   const s = String(val);
   return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
 }
 
-/* UPDATED: add a "Ward total compliance" row like your screenshot */
+function formatPct(num) {
+  if (!isFinite(num)) return "";
+  const fixed = num.toFixed(1);
+  const tidy = fixed.endsWith(".0") ? fixed.slice(0, -2) : fixed;
+  return `${tidy}%`;
+}
+
+/* UPDATED: CSV layout like your screenshot (right-side ward panel column) */
 function auditsToCSV(audits) {
   const header = ["Date","Auditor","Ward","Bed","Single/Isolation Room","Compliance (%)","Non-compliant Items"]
-    .concat(QUESTIONS.map((_, i) => `Q${i + 1}`));
+    .concat(QUESTIONS.map((_, i) => `Q${i + 1}`))
+    .concat(["WARD"]); // right panel column
+
+  // overall ward compliance
+  const totalYes = audits.reduce((acc, a) => acc + (a.answers || []).filter(x => x === "Yes").length, 0);
+  const wardComplianceNum = audits.length ? (totalYes / (audits.length * QUESTIONS.length)) * 100 : NaN;
+  const wardComplianceStr = formatPct(wardComplianceNum);
 
   const lines = [header.map(csvEscape).join(",")];
 
-  // Rows per audited bed
-  audits.forEach(a => {
-    const row = [a.date, a.auditor, a.ward, a.bed, a.isolationRoom, a.compliance, a.nonCompliantItems]
-      .map(csvEscape)
-      .concat((a.answers || []).map(csvEscape));
+  audits.forEach((a, idx) => {
+    // Right panel values to mimic the screenshot layout
+    let wardPanel = "";
+    if (audits.length >= 3) {
+      if (idx === 0) wardPanel = a.ward || "";
+      else if (idx === 1) wardPanel = "Overall\nward\ncompliance";
+      else if (idx === 2) wardPanel = wardComplianceStr;
+    } else if (audits.length === 2) {
+      if (idx === 0) wardPanel = a.ward || "";
+      else if (idx === 1) wardPanel = `Overall\nward\ncompliance\n${wardComplianceStr}`;
+    } else if (audits.length === 1) {
+      wardPanel = `${a.ward || ""}\nOverall\nward\ncompliance\n${wardComplianceStr}`;
+    }
+
+    const row = [
+      a.date,
+      a.auditor,
+      a.ward,
+      a.bed,
+      a.isolationRoom,
+      a.compliance,               // already stored as number-string; keep as-is
+      a.nonCompliantItems
+    ]
+    .map(csvEscape)
+    .concat((a.answers || []).map(csvEscape))
+    .concat([csvEscape(wardPanel)]);
+
     lines.push(row.join(","));
   });
-
-  // Ward total compliance (overall)
-  const totalYes = audits.reduce((acc, a) => acc + (a.answers || []).filter(x => x === "Yes").length, 0);
-  const wardCompliance = audits.length ? ((totalYes / (audits.length * QUESTIONS.length)) * 100).toFixed(1) : "";
-
-  // Blank spacer line
-  lines.push("");
-
-  // Summary row aligned to your screenshot:
-  // Column B (Auditor) = "Ward total compliance"
-  // Column F (Compliance) = wardCompliance
-  const summary = new Array(header.length).fill("");
-  summary[1] = "Ward total compliance";
-  summary[5] = wardCompliance;
-  lines.push(summary.map(csvEscape).join(","));
 
   return lines.join("\r\n");
 }
@@ -576,7 +595,11 @@ function downloadCSV(csv, filename) {
     try {
       const file = new File([csv], filename, { type: "text/csv" });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({ files: [file], title: "Suction Audit Export", text: "CSV export from Suction Equipment Audit" });
+        navigator.share({
+          files: [file],
+          title: "Suction Audit Export",
+          text: "CSV export from Suction Equipment Audit"
+        });
         return { mode: "share-file" };
       }
     } catch (e) {}
@@ -591,7 +614,7 @@ function downloadCSV(csv, filename) {
   return { mode: "open-tab" };
 }
 
-/* SUBMIT: sends to flow */
+/* SUBMIT */
 async function submitAudits() {
   const auditor = document.getElementById("auditor").value;
   const date = document.getElementById("date").value;
@@ -631,7 +654,9 @@ async function submitAudits() {
       else if (picked === "No") nonCompliant.push(group.querySelector(".question").innerText);
     });
 
-    const compliance = ((yesCount / QUESTIONS.length) * 100).toFixed(1);
+    const complianceNum = (yesCount / QUESTIONS.length) * 100;
+    const compliance = complianceNum.toFixed(1); // keep numeric-looking string (as before)
+
     audits.push({
       date, auditor, ward, bed,
       isolationRoom,
