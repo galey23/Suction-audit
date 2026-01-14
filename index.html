@@ -206,7 +206,9 @@
           <option>Renal Unit</option>
         </optgroup>
       </select>
-      <div class="hint" id="wardHint">Capacity and sample size will be auto-filled based on the selected ward/area.</div>
+      <div class="hint" id="wardHint">
+        Capacity and sample size will be auto-filled based on the selected ward. The sample will be randomly generated but displayed in ascending order for easier ward routing.
+      </div>
     </div>
 
     <div class="form-group" id="capacityGroup">
@@ -278,14 +280,6 @@ const QUESTIONS = [
 
 /* ============================
    ED LOCATIONS (FINAL)
-   Area 1: Decontamination Room + Cubicle 8..15
-   Area 2: 16A/16B, 17..21, 22A/22B, 23A/23B + TH2
-   Area 3: Cubicle 24..29 + TH1 + Cubicle 4 + 5
-
-   Rules:
-   - Always include Decontamination Room
-   - Always include at least TWO of: Cubicle 16B, Cubicle 22B, Cubicle 23B
-   - Ensure Area 1, Area 2, Area 3 all represented
 ============================ */
 const ED_DECON = "Decontamination Room";
 
@@ -358,16 +352,10 @@ function generateEDSelection(sampleSize) {
 
   const chosen = new Set();
 
-  // Force Area 1
   chosen.add(ED_DECON);
-
-  // Force 2x B-sides (Area 2)
   randPickN(ED_B_SIDES, 2).forEach(x => chosen.add(x));
-
-  // Force Area 3 (at least one pick)
   chosen.add(randPick(ED_AREA3));
 
-  // Fill remainder
   const pool = ED_LOCATIONS.filter(x => !chosen.has(x));
   while (chosen.size < sampleSize && pool.length) {
     const idx = Math.floor(Math.random() * pool.length);
@@ -375,7 +363,6 @@ function generateEDSelection(sampleSize) {
     pool.splice(idx, 1);
   }
 
-  // Trim if over
   if (chosen.size > sampleSize) {
     const mustKeep = new Set([ED_DECON]);
     ED_B_SIDES.filter(x => chosen.has(x)).slice(0, 2).forEach(x => mustKeep.add(x));
@@ -406,16 +393,54 @@ function recoveryPendentLabels() {
   return out;
 }
 
-// Optional convenience: generate all OT audit points in one go
 const OT_ALL_LABELS = [
-  ...rangeLabels("Theatre", 1, 5),                 // Pillar 1
-  ...rangeLabels("Theatre", 8, 14),                // Pillar 2
-  ...rangeLabels("Theatre", 15, 20),               // Pillar 3
-  "Theatre CPOD", "Theatre Trauma 1",              // Pillar 4 (as provided)
-  ...recoveryPendentLabels(),                      // Recovery: 6 pendents x 2 points
-  ...rangeLabels("Endoscopy Theatre", 1, 5),        // Endoscopy theatres
-  "Endo Urology"                                   // Endo Urology
+  ...rangeLabels("Theatre", 1, 5),
+  ...rangeLabels("Theatre", 8, 14),
+  ...rangeLabels("Theatre", 15, 20),
+  "Theatre CPOD", "Theatre Trauma 1",
+  ...recoveryPendentLabels(),
+  ...rangeLabels("Endoscopy Theatre", 1, 5),
+  "Endo Urology"
 ];
+
+/* ============================
+   ONCO DAY WARD (STRATIFIED) HELPERS
+   ============================ */
+function makeAreaBeds(areaName, count) {
+  const out = [];
+  for (let i = 1; i <= count; i++) out.push(`${areaName} - Bed ${i}`);
+  return out;
+}
+
+function parseAreaBedLabel(s) {
+  const m = /^(.*?)\s-\sBed\s(\d+)$/.exec(String(s).trim());
+  if (!m) return { area: String(s), num: Number.POSITIVE_INFINITY };
+  return { area: m[1], num: parseInt(m[2], 10) };
+}
+
+function stratifiedSortFactory(areaOrder) {
+  const idx = new Map(areaOrder.map((a, i) => [a, i]));
+  return (a, b) => {
+    const A = parseAreaBedLabel(a);
+    const B = parseAreaBedLabel(b);
+    const ai = idx.has(A.area) ? idx.get(A.area) : 999;
+    const bi = idx.has(B.area) ? idx.get(B.area) : 999;
+    if (ai !== bi) return ai - bi;
+    if (A.num !== B.num) return A.num - B.num;
+    return String(a).localeCompare(String(b));
+  };
+}
+
+function generateStratifiedSelection(strata) {
+  const picks = [];
+  for (const s of strata) {
+    if (!Array.isArray(s.labels)) throw new Error("Invalid strata labels.");
+    if (s.sample > s.labels.length) throw new Error(`Sample too large in ${s.name}.`);
+    picks.push(...randPickN(s.labels, s.sample));
+  }
+  const areaOrder = strata.map(s => s.name);
+  return picks.sort(stratifiedSortFactory(areaOrder));
+}
 
 /* ============================
    WARD CONFIGURATION
@@ -452,7 +477,6 @@ const WARD_CONFIG = {
   "OT Pillar 4": {
     capacity: 2, sample: 2,
     auditMode: "full",
-    // If you have more points in Pillar 4, just add them here
     labels: ["Theatre CPOD", "Theatre Trauma 1"],
     lockCapacity: true,
     unitType: "audit-point"
@@ -547,7 +571,21 @@ const WARD_CONFIG = {
   "HEAMATOLOGY":   { capacity: 21, sample: 9 },
   "ONCO 1":        { capacity: 16, sample: 7 },
   "ONCO 2":        { capacity: 17, sample: 7 },
-  "Onco Day Ward": { capacity: 45, sample: 18 },
+
+  // UPDATED: Onco Day Ward = 27 beds, stratified random sample per area
+  "Onco Day Ward": {
+    capacity: 27,
+    sample: 14,            // 4 + 3 + 4 + 3
+    auditMode: "stratified",
+    lockCapacity: true,
+    strata: [
+      { name: "Area 1",     labels: makeAreaBeds("Area 1", 8),     sample: 4 },
+      { name: "Area 2",     labels: makeAreaBeds("Area 2", 5),     sample: 3 },
+      { name: "Area 3",     labels: makeAreaBeds("Area 3", 8),     sample: 4 },
+      { name: "Beds Area",  labels: makeAreaBeds("Beds Area", 6),  sample: 3 }
+    ]
+  },
+
   "Palliative":    { capacity: 16, sample: 7 },
   "Renal Unit":    { capacity: 35, sample: 14 }
 };
@@ -583,10 +621,8 @@ function onWardChange() {
     bedCountInput.value = config.capacity;
     bedsToAuditInput.value = config.sample;
 
-    // Lock capacity for fixed/full-audit areas (Operating Theatres)
     bedCountInput.readOnly = !!config.lockCapacity;
 
-    // UI wording: no "Beds" shown when OT selected
     if (terms.plural === "audit points") {
       bedCountLabel.textContent = "Total Audit Points in Area:";
       bedsToAuditLabel.textContent = "Audit Points to Audit (full):";
@@ -595,12 +631,16 @@ function onWardChange() {
     } else if (terms.plural === "locations") {
       bedCountLabel.textContent = "Total Locations in Area:";
       bedsToAuditLabel.textContent = "Locations to Audit (sample size):";
-      wardHint.textContent = "Capacity and sample size will be auto-filled based on the selected area.";
+      wardHint.textContent =
+        "Capacity and sample size will be auto-filled based on the selected area. " +
+        "The sample will be randomly generated but displayed in an ordered way for easier routing.";
       generateBtn.textContent = "Generate Location Audits";
     } else {
       bedCountLabel.textContent = "Total Beds in Ward:";
       bedsToAuditLabel.textContent = "Beds to Audit (sample size):";
-      wardHint.textContent = "Capacity and sample size will be auto-filled based on the selected ward.";
+      wardHint.textContent =
+        "Capacity and sample size will be auto-filled based on the selected ward. " +
+        "The sample will be randomly generated but displayed in ascending order for easier ward routing.";
       generateBtn.textContent = "Generate Bed Audits";
     }
   } else {
@@ -610,7 +650,9 @@ function onWardChange() {
 
     bedCountLabel.textContent = "Total Beds in Ward:";
     bedsToAuditLabel.textContent = "Beds to Audit (sample size):";
-    wardHint.textContent = "Capacity and sample size will be auto-filled based on the selected ward/area.";
+    wardHint.textContent =
+      "Capacity and sample size will be auto-filled based on the selected ward. " +
+      "The sample will be randomly generated but displayed in ascending order for easier ward routing.";
     generateBtn.textContent = "Generate Bed Audits";
   }
 
@@ -638,22 +680,22 @@ function generateAudits() {
   if (ward === "ED") {
     selections = generateEDSelection(bedsToAudit);
   } else if (config && config.auditMode === "full") {
-    // FULL AUDIT (Operating Theatres etc.)
     if (Array.isArray(config.labels) && config.labels.length) {
       selections = config.labels.slice();
     } else {
-      // fallback: audit everything 1..capacity
-      selections = Array.from({ length: bedCount }, (_, i) => `${terms.singular[0].toUpperCase()}${terms.singular.slice(1)} ${i + 1}`);
+      selections = Array.from({ length: bedCount }, (_, i) => `Bed ${i + 1}`);
     }
+  } else if (config && config.auditMode === "stratified") {
+    // Onco Day Ward: random within each area, then ordered for routing (Area order, then bed number)
+    selections = generateStratifiedSelection(config.strata || []);
   } else {
-    // RANDOM SAMPLE (default ward behaviour)
+    // Normal wards: random sample, displayed in ascending order
     const nums = [];
     while (nums.length < bedsToAudit) {
       const n = Math.floor(Math.random() * bedCount) + 1;
       if (!nums.includes(n)) nums.push(n);
     }
     nums.sort((a, b) => a - b);
-    // Keep "Bed X" for legacy wards (and because your CSV column is "Bed")
     selections = nums.map(n => `Bed ${n}`);
   }
 
@@ -711,9 +753,8 @@ function formatPct(num) {
 function auditsToCSV(audits) {
   const header = ["Date","Auditor","Ward","Bed","Single/Isolation Room","Compliance (%)","Non-compliant Items"]
     .concat(QUESTIONS.map((_, i) => `Q${i + 1}`))
-    .concat(["WARD"]); // right panel column
+    .concat(["WARD"]);
 
-  // overall ward compliance
   const totalYes = audits.reduce((acc, a) => acc + (a.answers || []).filter(x => x === "Yes").length, 0);
   const wardComplianceNum = audits.length ? (totalYes / (audits.length * QUESTIONS.length)) * 100 : NaN;
   const wardComplianceStr = formatPct(wardComplianceNum);
@@ -721,7 +762,6 @@ function auditsToCSV(audits) {
   const lines = [header.map(csvEscape).join(",")];
 
   audits.forEach((a, idx) => {
-    // Right panel values to mimic the screenshot layout
     let wardPanel = "";
     if (audits.length >= 3) {
       if (idx === 0) wardPanel = a.ward || "";
