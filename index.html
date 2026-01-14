@@ -310,7 +310,7 @@
         <img src="RRT Logo (no background).png" alt="Rapid Response Team Logo">
       </div>
       <h1>Airway Suction Equipment Audit</h1>
-      <div class="subtitle">Random sampling for wards (sorted for routing) • Full audit for theatres</div>
+      <div class="subtitle">Random sampling (sorted for routing)</div>
     </section>
 
     <section class="card">
@@ -419,6 +419,7 @@
                 <option>NEURO MED</option>
                 <option>NEURO SURG</option>
                 <option>SSU</option>
+                <option>Renal Unit</option>
               </optgroup>
 
               <optgroup label="OBGYN">
@@ -435,7 +436,6 @@
                 <option>ONCO 2</option>
                 <option>Onco Day Ward</option>
                 <option>Palliative</option>
-                <option>Renal Unit</option>
               </optgroup>
             </select>
 
@@ -750,6 +750,7 @@ const WARD_CONFIG = {
   "NEURO MED": { capacity: 23, sample: 10 },
   "NEURO SURG": { capacity: 19, sample: 8 },
   "SSU": { capacity: 29, sample: 12 },
+  "Renal Unit": { capacity: 35, sample: 14 }
 
   // OBGYN
   "Gynae": { capacity: 11, sample: 5 },
@@ -778,7 +779,6 @@ const WARD_CONFIG = {
   },
 
   "Palliative": { capacity: 16, sample: 7 },
-  "Renal Unit": { capacity: 35, sample: 14 }
 };
 
 function getUnitTerms(ward) {
