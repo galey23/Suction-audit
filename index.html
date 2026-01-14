@@ -13,10 +13,8 @@
       --text:#0f172a;
       --muted:#64748b;
       --border:#e2e8f0;
-      --accent:#0f4c5c;     /* deep teal */
-      --accent2:#1f6f8b;    /* lighter teal */
-      --ok:#16a34a;
-      --warn:#dc2626;
+      --accent:#0f4c5c;
+      --accent2:#1f6f8b;
       --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
       --shadow2: 0 6px 16px rgba(15, 23, 42, 0.06);
       --radius: 16px;
@@ -35,10 +33,7 @@
       padding: 28px 16px 40px;
     }
 
-    .page{
-      max-width: 980px;
-      margin: 0 auto;
-    }
+    .page{ max-width: 980px; margin: 0 auto; }
 
     .top-card{
       background: var(--card);
@@ -116,8 +111,6 @@
       margin: 0 0 6px;
     }
 
-    .form-group{ margin: 0; }
-
     select, input[type="number"], input[type="text"]{
       width: 100%;
       padding: 11px 12px;
@@ -127,7 +120,7 @@
       background: #fbfdff;
       color: var(--text);
       outline: none;
-      transition: box-shadow .15s ease, border-color .15s ease, transform .05s ease;
+      transition: box-shadow .15s ease, border-color .15s ease;
     }
     select:focus, input:focus{
       border-color: rgba(31,111,139,.65);
@@ -167,7 +160,7 @@
       font-size: 15px;
       font-weight: 650;
       cursor:pointer;
-      transition: transform .05s ease, box-shadow .15s ease, background .15s ease, opacity .15s ease;
+      transition: transform .05s ease, box-shadow .15s ease, background .15s ease;
       user-select:none;
     }
     button:active{ transform: translateY(1px); }
@@ -179,12 +172,16 @@
     }
     .btn-primary:hover{ box-shadow: 0 12px 24px rgba(15,76,92,.24); }
 
-    .btn-ghost{
-      background: rgba(15,76,92,.08);
-      color: var(--accent);
-      border: 1px solid rgba(15,76,92,.20);
+    .btn-warn{
+      background: rgba(220,38,38,.08);
+      color: #991b1b;
+      border: 1px solid rgba(220,38,38,.25);
+      padding: 8px 12px;
+      font-size: 13px;
+      border-radius: 10px;
+      font-weight: 750;
     }
-    .btn-ghost:hover{ background: rgba(15,76,92,.11); }
+    .btn-warn:hover{ background: rgba(220,38,38,.12); }
 
     .submit-bar{
       position: sticky;
@@ -221,7 +218,7 @@
       opacity:.9;
     }
     .audit-block h3{
-      margin: 0 0 12px;
+      margin: 0 0 10px;
       padding-left: 8px;
       font-size: 16px;
       letter-spacing: -.01em;
@@ -230,15 +227,14 @@
       align-items:center;
       flex-wrap: wrap;
     }
+    .audit-title{ font-weight: 800; }
 
-    /* isolation selector inline */
     .iso-inline{
-      font-weight: 500;
+      font-weight: 600;
       color: var(--muted);
       display:inline-flex;
       align-items:center;
       gap: 8px;
-      margin-left: 0;
     }
     .audit-block h3 select{
       width:auto;
@@ -246,6 +242,14 @@
       border-radius: 10px;
       font-size: 14px;
       background:#fbfdff;
+    }
+
+    .replacement-note{
+      margin: 0 0 6px 8px;
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.25;
+      display:none;
     }
 
     .checklist-group{
@@ -272,7 +276,7 @@
       flex-wrap: wrap;
     }
     .yn-row label{
-      font-weight: 600;
+      font-weight: 700;
       display: inline-flex;
       align-items: center;
       gap: 10px;
@@ -283,22 +287,13 @@
       border-radius: 12px;
       border: 1px solid #eef2f7;
       background: #fbfdff;
-      transition: background .15s ease, border-color .15s ease;
-    }
-    .yn-row label:hover{
-      background:#ffffff;
-      border-color: rgba(31,111,139,.22);
     }
     .yn-row input[type="radio"]{
       transform: scale(1.35);
       margin: 0;
     }
 
-    /* nicer optgroup labels on some browsers */
-    optgroup{
-      font-weight: 700;
-      color: #334155;
-    }
+    optgroup{ font-weight: 800; color: #334155; }
   </style>
 </head>
 
@@ -458,7 +453,6 @@
 
         <div class="actions">
           <button type="button" id="generateBtn" class="btn-primary" onclick="generateAudits()">Generate Bed Audits</button>
-          <button type="button" class="btn-ghost" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})">Jump to Submit</button>
         </div>
       </form>
     </section>
@@ -519,6 +513,21 @@ const QUESTIONS = [
 ];
 
 /* ============================
+   RANDOM HELPERS
+============================ */
+function randPick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function randPickN(arr, n) {
+  const copy = arr.slice();
+  const picks = [];
+  while (picks.length < n && copy.length) {
+    const idx = Math.floor(Math.random() * copy.length);
+    picks.push(copy[idx]);
+    copy.splice(idx, 1);
+  }
+  return picks;
+}
+
+/* ============================
    ED LOCATIONS (FINAL)
 ============================ */
 const ED_DECON = "Decontamination Room";
@@ -548,18 +557,6 @@ const ED_AREA3 = (() => {
 
 const ED_B_SIDES = ["Cubicle 16B", "Cubicle 22B", "Cubicle 23B"];
 const ED_LOCATIONS = Array.from(new Set([...ED_AREA1, ...ED_AREA2, ...ED_AREA3]));
-
-function randPick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-function randPickN(arr, n) {
-  const copy = arr.slice();
-  const picks = [];
-  while (picks.length < n && copy.length) {
-    const idx = Math.floor(Math.random() * copy.length);
-    picks.push(copy[idx]);
-    copy.splice(idx, 1);
-  }
-  return picks;
-}
 
 function edSort(a, b) {
   const areaOf = (s) => {
@@ -591,7 +588,6 @@ function generateEDSelection(sampleSize) {
   if (sampleSize > ED_LOCATIONS.length) throw new Error(`ED sample size too large. Max = ${ED_LOCATIONS.length}.`);
 
   const chosen = new Set();
-
   chosen.add(ED_DECON);
   randPickN(ED_B_SIDES, 2).forEach(x => chosen.add(x));
   chosen.add(randPick(ED_AREA3));
@@ -626,7 +622,6 @@ function rangeLabels(prefix, start, end) {
   for (let n = start; n <= end; n++) out.push(`${prefix} ${n}`);
   return out;
 }
-
 function recoveryPendentLabels() {
   const out = [];
   for (let p = 1; p <= 6; p++) out.push(`Pendent ${p}A`, `Pendent ${p}B`);
@@ -683,16 +678,44 @@ function generateStratifiedSelection(strata) {
 }
 
 /* ============================
+   SINGLE-BED REPLACEMENT HELPERS
+   ============================ */
+function pickReplacementForStandardWard(ward, usedSet) {
+  const cfg = WARD_CONFIG[ward];
+  const cap = cfg ? cfg.capacity : null;
+  if (!cap) throw new Error("No capacity found for ward.");
+
+  const pool = [];
+  for (let n = 1; n <= cap; n++) {
+    const label = `Bed ${n}`;
+    if (!usedSet.has(label)) pool.push(label);
+  }
+  if (!pool.length) throw new Error("No replacement beds available (all are already in the sample).");
+  return randPick(pool);
+}
+
+function pickReplacementForOnco(currentLabel, usedSet) {
+  const info = parseAreaBedLabel(currentLabel);
+  const onco = WARD_CONFIG["Onco Day Ward"];
+  const stratum = (onco.strata || []).find(s => s.name === info.area);
+  if (!stratum) throw new Error("Could not identify Onco area for replacement.");
+
+  const pool = (stratum.labels || []).filter(x => !usedSet.has(x));
+  if (!pool.length) throw new Error(`No replacement beds available in ${info.area}.`);
+  return randPick(pool);
+}
+
+/* ============================
    WARD CONFIGURATION
    ============================ */
 const WARD_CONFIG = {
-  "ED":            { capacity: 35, sample: 14 },
-  "CCU":           { capacity: 15, sample: 6 },
-  "SHDU":          { capacity: 8,  sample: 4 },
-  "NIV":           { capacity: 6,  sample: 3 },
+  "ED":  { capacity: 35, sample: 14 },
+  "CCU": { capacity: 15, sample: 6 },
+  "SHDU":{ capacity: 8,  sample: 4 },
+  "NIV": { capacity: 6,  sample: 3 },
   "Cardiac Catheterisation Suite": { capacity: 16, sample: 7 },
 
-  // ===== Operating Theatres (FULL AUDIT) =====
+  // Operating Theatres (FULL AUDIT)
   "OT Pillar 1": { capacity: 5, sample: 5, auditMode: "full", labels: rangeLabels("Theatre", 1, 5), lockCapacity: true, unitType: "audit-point" },
   "OT Pillar 2": { capacity: 7, sample: 7, auditMode: "full", labels: rangeLabels("Theatre", 8, 14), lockCapacity: true, unitType: "audit-point" },
   "OT Pillar 3": { capacity: 6, sample: 6, auditMode: "full", labels: rangeLabels("Theatre", 15, 20), lockCapacity: true, unitType: "audit-point" },
@@ -750,7 +773,7 @@ const WARD_CONFIG = {
   "NEURO MED": { capacity: 23, sample: 10 },
   "NEURO SURG": { capacity: 19, sample: 8 },
   "SSU": { capacity: 29, sample: 12 },
-  "Renal Unit": { capacity: 35, sample: 14 }
+  "Renal Unit": { capacity: 35, sample: 14 },
 
   // OBGYN
   "Gynae": { capacity: 11, sample: 5 },
@@ -767,7 +790,7 @@ const WARD_CONFIG = {
   // Onco Day Ward: 27 beds, stratified random sample per area
   "Onco Day Ward": {
     capacity: 27,
-    sample: 14,            // 4 + 3 + 4 + 3
+    sample: 14,
     auditMode: "stratified",
     lockCapacity: true,
     strata: [
@@ -778,7 +801,7 @@ const WARD_CONFIG = {
     ]
   },
 
-  "Palliative": { capacity: 16, sample: 7 },
+  "Palliative": { capacity: 16, sample: 7 }
 };
 
 function getUnitTerms(ward) {
@@ -788,10 +811,13 @@ function getUnitTerms(ward) {
   return { singular: "bed", plural: "beds" };
 }
 
-// Auto-fill date + bind
+/* ============================
+   INIT
+   ============================ */
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("date").value = new Date().toLocaleDateString("en-GB");
   document.getElementById("ward").addEventListener("change", onWardChange);
+  onWardChange(); // apply if browser restored selection
 });
 
 function onWardChange() {
@@ -811,7 +837,6 @@ function onWardChange() {
   if (config) {
     bedCountInput.value = config.capacity;
     bedsToAuditInput.value = config.sample;
-
     bedCountInput.readOnly = !!config.lockCapacity;
 
     if (terms.plural === "audit points") {
@@ -824,7 +849,7 @@ function onWardChange() {
       bedsToAuditLabel.textContent = "Locations to Audit (sample size)";
       wardHint.textContent =
         "Capacity and sample size will be auto-filled based on the selected area. " +
-        "The sample will be randomly generated but displayed in an ordered way for easier routing.";
+        "The sample will remain random (ED rules) but displayed in an ordered way for easier routing.";
       generateBtn.textContent = "Generate Location Audits";
     } else {
       bedCountLabel.textContent = "Total Beds in Ward";
@@ -838,7 +863,6 @@ function onWardChange() {
     bedCountInput.value = "";
     bedsToAuditInput.value = "";
     bedCountInput.readOnly = false;
-
     bedCountLabel.textContent = "Total Beds in Ward";
     bedsToAuditLabel.textContent = "Beds to Audit (sample size)";
     wardHint.textContent =
@@ -848,6 +872,18 @@ function onWardChange() {
   }
 
   document.getElementById("auditContainer").innerHTML = "";
+}
+
+function generateChecklistInputs(index) {
+  return QUESTIONS.map((q, i) => `
+    <div class="checklist-group">
+      <label class="question">${q}</label>
+      <div class="yn-row">
+        <label><input type="radio" name="q${index}_${i}" value="Yes" required> Yes</label>
+        <label><input type="radio" name="q${index}_${i}" value="No"> No</label>
+      </div>
+    </div>
+  `).join("");
 }
 
 function generateAudits() {
@@ -889,11 +925,22 @@ function generateAudits() {
   selections.forEach((label, index) => {
     const div = document.createElement("div");
     div.className = "audit-block";
-    div.dataset.bed = label;
+    div.dataset.bed = label; // used in submit/export
+
+    const canReplace =
+      ward !== "ED" &&
+      !(config && config.auditMode === "full"); // not for OT/full
 
     div.innerHTML = `
       <h3>
-        <span>Audit ${index + 1}: ${label}</span>
+        <span class="audit-title">Audit ${index + 1}: <span class="bed-label">${label}</span></span>
+
+        ${canReplace ? `
+          <button type="button" class="btn-warn" data-action="replace">
+            Bed unauditable → Replace
+          </button>
+        ` : ""}
+
         <span class="iso-inline">Single/Isolation room?
           <select name="iso${index}" required>
             <option value="">Select</option>
@@ -902,6 +949,8 @@ function generateAudits() {
           </select>
         </span>
       </h3>
+
+      <div class="replacement-note"></div>
       ${generateChecklistInputs(index)}
     `;
     container.appendChild(div);
@@ -910,19 +959,58 @@ function generateAudits() {
   window.scrollTo({ top: container.offsetTop - 10, behavior: "smooth" });
 }
 
-function generateChecklistInputs(index) {
-  return QUESTIONS.map((q, i) => `
-    <div class="checklist-group">
-      <label class="question">${q}</label>
-      <div class="yn-row">
-        <label><input type="radio" name="q${index}_${i}" value="Yes" required> Yes</label>
-        <label><input type="radio" name="q${index}_${i}" value="No"> No</label>
-      </div>
-    </div>
-  `).join("");
-}
+/* ============================
+   SINGLE-CARD REPLACEMENT (ONLY THAT BED)
+   ============================ */
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest('button[data-action="replace"]');
+  if (!btn) return;
 
-/* CSV helpers */
+  const ward = document.getElementById("ward").value;
+  const config = WARD_CONFIG[ward];
+
+  const block = btn.closest(".audit-block");
+  if (!block) return;
+
+  const labelEl = block.querySelector(".bed-label");
+  if (!labelEl) return;
+
+  const currentLabel = (labelEl.textContent || "").trim();
+
+  // Build used set from current UI labels (avoid duplicates)
+  const usedSet = new Set(
+    Array.from(document.querySelectorAll(".audit-block .bed-label"))
+      .map(el => (el.textContent || "").trim())
+      .filter(Boolean)
+  );
+  usedSet.delete(currentLabel);
+
+  let newLabel = "";
+  try {
+    if (ward === "Onco Day Ward" && config && config.auditMode === "stratified") {
+      newLabel = pickReplacementForOnco(currentLabel, usedSet);
+    } else {
+      newLabel = pickReplacementForStandardWard(ward, usedSet);
+    }
+  } catch (err) {
+    alert(err.message || String(err));
+    return;
+  }
+
+  // Update only this one card label (answers remain untouched)
+  labelEl.textContent = newLabel;
+  block.dataset.bed = newLabel;
+
+  const note = block.querySelector(".replacement-note");
+  if (note) {
+    note.style.display = "block";
+    note.textContent = `Replaced ${currentLabel} → ${newLabel}`;
+  }
+});
+
+/* ============================
+   CSV helpers
+   ============================ */
 function csvEscape(val) {
   if (val == null) return "";
   const s = String(val);
@@ -936,7 +1024,6 @@ function formatPct(num) {
   return `${tidy}%`;
 }
 
-/* CSV layout like your screenshot (right-side ward panel column) */
 function auditsToCSV(audits) {
   const header = ["Date","Auditor","Ward","Bed","Single/Isolation Room","Compliance (%)","Non-compliant Items"]
     .concat(QUESTIONS.map((_, i) => `Q${i + 1}`))
@@ -962,13 +1049,7 @@ function auditsToCSV(audits) {
     }
 
     const row = [
-      a.date,
-      a.auditor,
-      a.ward,
-      a.bed,
-      a.isolationRoom,
-      a.compliance,
-      a.nonCompliantItems
+      a.date, a.auditor, a.ward, a.bed, a.isolationRoom, a.compliance, a.nonCompliantItems
     ]
     .map(csvEscape)
     .concat((a.answers || []).map(csvEscape))
@@ -980,10 +1061,8 @@ function auditsToCSV(audits) {
   return lines.join("\r\n");
 }
 
-// Cross-platform CSV download / share
 function downloadCSV(csv, filename) {
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-
   const a = document.createElement("a");
   const supportsDownloadAttr = "download" in a;
   const ua = navigator.userAgent || "";
@@ -1006,15 +1085,10 @@ function downloadCSV(csv, filename) {
     try {
       const file = new File([csv], filename, { type: "text/csv" });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({
-          files: [file],
-          title: "Suction Audit Export",
-          text: "CSV export from Suction Equipment Audit"
-        });
+        navigator.share({ files: [file], title: "Suction Audit Export", text: "CSV export from Suction Equipment Audit" });
         return { mode: "share-file" };
       }
     } catch (e) {}
-
     navigator.share({ title: "Suction Audit Export", text: csv }).catch(() => {});
     return { mode: "share-text" };
   }
@@ -1025,7 +1099,9 @@ function downloadCSV(csv, filename) {
   return { mode: "open-tab" };
 }
 
-/* SUBMIT */
+/* ============================
+   SUBMIT
+   ============================ */
 async function submitAudits() {
   const auditor = document.getElementById("auditor").value;
   const date = document.getElementById("date").value;
@@ -1041,13 +1117,13 @@ async function submitAudits() {
 
   for (let index = 0; index < blocks.length; index++) {
     const block = blocks[index];
-    const bed = block.dataset.bed || (block.querySelector("h3")?.innerText || `Audit ${index+1}`);
+    const bed = block.dataset.bed || "";
 
     const isoSelect = block.querySelector(`select[name="iso${index}"]`);
     const isolationRoom = isoSelect ? isoSelect.value : "";
 
     if (!isolationRoom) {
-      alert(`Please select Single/Isolation room = Yes/No for ${bed}.`);
+      alert(`Please select Single/Isolation room = Yes/No for ${bed || `Audit ${index+1}`}.`);
       block.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
