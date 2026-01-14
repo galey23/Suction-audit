@@ -81,24 +81,23 @@
       <label for="auditor">Auditor Name:</label>
       <select id="auditor" required>
         <option value="">Select Auditor</option>
-<option>Bernard</option>
-<option>Clifford PDN</option>
-<option>Clint</option>
-<option>Daphne PDN</option>
-<option>Duncan PDN</option>
-<option>Jessica</option>
-<option>Josette</option>
-<option>Justin PDN</option>
-<option>Kristin PDN</option>
-<option>Lisa PDN</option>
-<option>Luke PDN</option>
-<option>Mario</option>
-<option>Mario PDN</option>
-<option>Miriam</option>
-<option>Nicole</option>
-<option>Stephanie</option>
-<option>Yorick</option>
-
+        <option>Bernard</option>
+        <option>Clifford PDN</option>
+        <option>Clint</option>
+        <option>Daphne PDN</option>
+        <option>Duncan PDN</option>
+        <option>Jessica</option>
+        <option>Josette</option>
+        <option>Justin PDN</option>
+        <option>Kristin PDN</option>
+        <option>Lisa PDN</option>
+        <option>Luke PDN</option>
+        <option>Mario</option>
+        <option>Mario PDN</option>
+        <option>Miriam</option>
+        <option>Nicole</option>
+        <option>Stephanie</option>
+        <option>Yorick</option>
       </select>
     </div>
 
@@ -108,91 +107,119 @@
     </div>
 
     <div class="form-group">
-      <label for="ward">Ward:</label>
+      <label for="ward">Ward / Area:</label>
       <select id="ward" required>
-        <option value="">Select Ward</option>
+        <option value="">Select Ward / Area</option>
+
         <!-- Critical Care -->
-        <option>ED</option>
-        <option>CCU</option>
-        <option>SHDU</option>
-        <option>NIV</option>
-        <option>Cardiac Catheterisation Suite</option>
-        
+        <optgroup label="Critical Care">
+          <option>ED</option>
+          <option>CCU</option>
+          <option>SHDU</option>
+          <option>NIV</option>
+          <option>Cardiac Catheterisation Suite</option>
+        </optgroup>
+
+        <!-- Operating Theatres -->
+        <optgroup label="Operating Theatres">
+          <option>OT Pillar 1</option>
+          <option>OT Pillar 2</option>
+          <option>OT Pillar 3</option>
+          <option>OT Pillar 4</option>
+          <option>OT Recovery</option>
+          <option>OT Endoscopy</option>
+          <option>OT Endo Urology</option>
+          <option>OT All Areas</option>
+        </optgroup>
+
         <!-- Medical -->
-        <option>MAU1</option>
-        <option>MAU2</option>
-        <option>MAU3</option>
-        <option>MW1</option>
-        <option>MW2</option>
-        <option>MW3</option>
-        <option>MW4</option>
-        <option>MW5</option>
-        <option>MW7</option>
-        <option>MW8</option>
-        <option>MW9</option>
-        <option>MW10</option>
-        <option>HDU</option>
-        <option>MW11</option>
-        <option>MIU3</option>
-        <option>MIU4</option>
-        <option>OBS1A</option>
-        <option>MOU</option>
-        <option>EVA</option>
-        <option>Auxiliary Ward 1</option>
-        <option>Endoscopy Temp ward</option>
+        <optgroup label="Medical">
+          <option>MAU1</option>
+          <option>MAU2</option>
+          <option>MAU3</option>
+          <option>MW1</option>
+          <option>MW2</option>
+          <option>MW3</option>
+          <option>MW4</option>
+          <option>MW5</option>
+          <option>MW7</option>
+          <option>MW8</option>
+          <option>MW9</option>
+          <option>MW10</option>
+          <option>HDU</option>
+          <option>MW11</option>
+          <option>MIU3</option>
+          <option>MIU4</option>
+          <option>OBS1A</option>
+          <option>MOU</option>
+          <option>EVA</option>
+          <option>Auxiliary Ward 1</option>
+          <option>Endoscopy Temp ward</option>
+        </optgroup>
 
         <!-- Surgical -->
-        <option>Plastics & Burns</option>
-        <option>ORTHO 1</option>
-        <option>ORTHO 2</option>
-        <option>ORTHO 3</option>
-        <option>SAU1</option>
-        <option>SAU2</option>
-        <option>SW1</option>
-        <option>SW2</option>
-        <option>SW3</option>
-        <option>SW4</option>
-        <option>SW5</option>
-        <option>URO 1</option>
-        <option>URO 2</option>
+        <optgroup label="Surgical">
+          <option>Plastics & Burns</option>
+          <option>ORTHO 1</option>
+          <option>ORTHO 2</option>
+          <option>ORTHO 3</option>
+          <option>SAU1</option>
+          <option>SAU2</option>
+          <option>SW1</option>
+          <option>SW2</option>
+          <option>SW3</option>
+          <option>SW4</option>
+          <option>SW5</option>
+          <option>URO 1</option>
+          <option>URO 2</option>
+        </optgroup>
+
         <!-- Speciality Units -->
-        <option>CMW</option>
-        <option>CSW</option>
-        <option>DFW</option>
-        <option>ENT</option>
-        <option>IDU</option>
-        <option>STROKE WARD</option>
-        <option>NEURO MED</option>
-        <option>NEURO SURG</option>
-        <option>SSU</option>
+        <optgroup label="Speciality Units">
+          <option>CMW</option>
+          <option>CSW</option>
+          <option>DFW</option>
+          <option>ENT</option>
+          <option>IDU</option>
+          <option>STROKE WARD</option>
+          <option>NEURO MED</option>
+          <option>NEURO SURG</option>
+          <option>SSU</option>
+        </optgroup>
+
         <!-- OBGYN -->
-        <option>Gynae</option>
-        <option>EPU</option>
-        <option>OBS 1</option>
-        <option>OBS 2</option>
-        <option>OBS 3</option>
+        <optgroup label="OBGYN">
+          <option>Gynae</option>
+          <option>EPU</option>
+          <option>OBS 1</option>
+          <option>OBS 2</option>
+          <option>OBS 3</option>
+        </optgroup>
+
         <!-- SAMOC -->
-        <option>HEAMATOLOGY</option>
-        <option>ONCO 1</option>
-        <option>ONCO 2</option>
-        <option>Onco Day Ward</option>
-        <option>Palliative</option>
-        <option>Renal Unit</option>
+        <optgroup label="SAMOC">
+          <option>HEAMATOLOGY</option>
+          <option>ONCO 1</option>
+          <option>ONCO 2</option>
+          <option>Onco Day Ward</option>
+          <option>Palliative</option>
+          <option>Renal Unit</option>
+        </optgroup>
       </select>
-      <div class="hint">Capacity and number of beds to audit will be auto-filled based on the selected ward.</div>
+      <div class="hint" id="wardHint">Capacity and sample size will be auto-filled based on the selected ward/area.</div>
     </div>
 
-    <div class="form-group">
-      <label for="bedCount">Total Beds in Ward:</label>
+    <div class="form-group" id="capacityGroup">
+      <label for="bedCount" id="bedCountLabel">Total Beds in Ward:</label>
       <input type="number" id="bedCount" min="1" required />
     </div>
 
-    <div class="form-group">
-      <label for="bedsToAudit">Beds to Audit (sample size):</label>
+    <div class="form-group" id="sampleGroup">
+      <label for="bedsToAudit" id="bedsToAuditLabel">Beds to Audit (sample size):</label>
       <input type="number" id="bedsToAudit" min="1" readonly />
     </div>
 
-    <button type="button" onclick="generateAudits()">Generate Bed Audits</button>
+    <button type="button" id="generateBtn" onclick="generateAudits()">Generate Bed Audits</button>
   </form>
 
   <div id="auditContainer"></div>
@@ -364,14 +391,103 @@ function generateEDSelection(sampleSize) {
   return Array.from(chosen).sort(edSort);
 }
 
-/* Ward configuration */
+/* ============================
+   OPERATING THEATRES HELPERS
+   ============================ */
+function rangeLabels(prefix, start, end) {
+  const out = [];
+  for (let n = start; n <= end; n++) out.push(`${prefix} ${n}`);
+  return out;
+}
+
+function recoveryPendentLabels() {
+  const out = [];
+  for (let p = 1; p <= 6; p++) out.push(`Pendent ${p}A`, `Pendent ${p}B`);
+  return out;
+}
+
+// Optional convenience: generate all OT audit points in one go
+const OT_ALL_LABELS = [
+  ...rangeLabels("Theatre", 1, 5),                 // Pillar 1
+  ...rangeLabels("Theatre", 8, 14),                // Pillar 2
+  ...rangeLabels("Theatre", 15, 20),               // Pillar 3
+  "Theatre CPOD", "Theatre Trauma 1",              // Pillar 4 (as provided)
+  ...recoveryPendentLabels(),                      // Recovery: 6 pendents x 2 points
+  ...rangeLabels("Endoscopy Theatre", 1, 5),        // Endoscopy theatres
+  "Endo Urology"                                   // Endo Urology
+];
+
+/* ============================
+   WARD CONFIGURATION
+   ============================ */
 const WARD_CONFIG = {
   "ED":            { capacity: 35, sample: 14 },
   "CCU":           { capacity: 15, sample: 6 },
   "SHDU":          { capacity: 8,  sample: 4 },
   "NIV":           { capacity: 6,  sample: 3 },
-  "Cardiac Catheterisation Suite":           { capacity: 16,  sample: 7 },
+  "Cardiac Catheterisation Suite": { capacity: 16, sample: 7 },
 
+  // ===== Operating Theatres (FULL AUDIT) =====
+  "OT Pillar 1": {
+    capacity: 5, sample: 5,
+    auditMode: "full",
+    labels: rangeLabels("Theatre", 1, 5),
+    lockCapacity: true,
+    unitType: "audit-point"
+  },
+  "OT Pillar 2": {
+    capacity: 7, sample: 7,
+    auditMode: "full",
+    labels: rangeLabels("Theatre", 8, 14),
+    lockCapacity: true,
+    unitType: "audit-point"
+  },
+  "OT Pillar 3": {
+    capacity: 6, sample: 6,
+    auditMode: "full",
+    labels: rangeLabels("Theatre", 15, 20),
+    lockCapacity: true,
+    unitType: "audit-point"
+  },
+  "OT Pillar 4": {
+    capacity: 2, sample: 2,
+    auditMode: "full",
+    // If you have more points in Pillar 4, just add them here
+    labels: ["Theatre CPOD", "Theatre Trauma 1"],
+    lockCapacity: true,
+    unitType: "audit-point"
+  },
+  "OT Recovery": {
+    capacity: 12, sample: 12,
+    auditMode: "full",
+    labels: recoveryPendentLabels(),
+    lockCapacity: true,
+    unitType: "audit-point"
+  },
+  "OT Endoscopy": {
+    capacity: 5, sample: 5,
+    auditMode: "full",
+    labels: rangeLabels("Endoscopy Theatre", 1, 5),
+    lockCapacity: true,
+    unitType: "audit-point"
+  },
+  "OT Endo Urology": {
+    capacity: 1, sample: 1,
+    auditMode: "full",
+    labels: ["Endo Urology"],
+    lockCapacity: true,
+    unitType: "audit-point"
+  },
+  "OT All Areas": {
+    capacity: OT_ALL_LABELS.length,
+    sample: OT_ALL_LABELS.length,
+    auditMode: "full",
+    labels: OT_ALL_LABELS,
+    lockCapacity: true,
+    unitType: "audit-point"
+  },
+
+  // Medical
   "MAU1":          { capacity: 35, sample: 14 },
   "MAU2":          { capacity: 33, sample: 14 },
   "MAU3":          { capacity: 23, sample: 10 },
@@ -394,6 +510,7 @@ const WARD_CONFIG = {
   "Auxiliary Ward 1":{ capacity: 11, sample: 5 },
   "Endoscopy Temp ward":{ capacity: 11, sample: 5 },
 
+  // Surgical
   "Plastics & Burns": { capacity: 11,  sample: 5 },
   "ORTHO 1":       { capacity: 24, sample: 10 },
   "ORTHO 2":       { capacity: 24, sample: 10 },
@@ -408,6 +525,7 @@ const WARD_CONFIG = {
   "URO 1":         { capacity: 25, sample: 10 },
   "URO 2":         { capacity: 11, sample: 5 },
 
+  // Speciality Units
   "CMW":           { capacity: 32, sample: 13 },
   "CSW":           { capacity: 17, sample: 7 },
   "DFW":           { capacity: 15, sample: 6 },
@@ -418,12 +536,14 @@ const WARD_CONFIG = {
   "NEURO SURG":    { capacity: 19, sample: 8 },
   "SSU":           { capacity: 29, sample: 12 },
 
+  // OBGYN
   "Gynae":         { capacity: 11, sample: 5 },
   "EPU":           { capacity: 6,  sample: 3 },
   "OBS 1":         { capacity: 24, sample: 10 },
   "OBS 2":         { capacity: 19, sample: 8 },
   "OBS 3":         { capacity: 20, sample: 8 },
 
+  // SAMOC
   "HEAMATOLOGY":   { capacity: 21, sample: 9 },
   "ONCO 1":        { capacity: 16, sample: 7 },
   "ONCO 2":        { capacity: 17, sample: 7 },
@@ -432,7 +552,14 @@ const WARD_CONFIG = {
   "Renal Unit":    { capacity: 35, sample: 14 }
 };
 
-// Auto-fill date
+function getUnitTerms(ward) {
+  const cfg = WARD_CONFIG[ward];
+  if (ward === "ED") return { singular: "location", plural: "locations" };
+  if (cfg && cfg.unitType === "audit-point") return { singular: "audit point", plural: "audit points" };
+  return { singular: "bed", plural: "beds" };
+}
+
+/* Auto-fill date + bind */
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("date").value = new Date().toLocaleDateString("en-GB");
   document.getElementById("ward").addEventListener("change", onWardChange);
@@ -441,16 +568,52 @@ document.addEventListener("DOMContentLoaded", () => {
 function onWardChange() {
   const ward = document.getElementById("ward").value;
   const config = WARD_CONFIG[ward];
+
   const bedCountInput = document.getElementById("bedCount");
   const bedsToAuditInput = document.getElementById("bedsToAudit");
+
+  const bedCountLabel = document.getElementById("bedCountLabel");
+  const bedsToAuditLabel = document.getElementById("bedsToAuditLabel");
+  const wardHint = document.getElementById("wardHint");
+  const generateBtn = document.getElementById("generateBtn");
+
+  const terms = getUnitTerms(ward);
 
   if (config) {
     bedCountInput.value = config.capacity;
     bedsToAuditInput.value = config.sample;
+
+    // Lock capacity for fixed/full-audit areas (Operating Theatres)
+    bedCountInput.readOnly = !!config.lockCapacity;
+
+    // UI wording: no "Beds" shown when OT selected
+    if (terms.plural === "audit points") {
+      bedCountLabel.textContent = "Total Audit Points in Area:";
+      bedsToAuditLabel.textContent = "Audit Points to Audit (full):";
+      wardHint.textContent = "This area is audited in full. All audit points will be generated (no random sampling).";
+      generateBtn.textContent = "Generate Audit Points";
+    } else if (terms.plural === "locations") {
+      bedCountLabel.textContent = "Total Locations in Area:";
+      bedsToAuditLabel.textContent = "Locations to Audit (sample size):";
+      wardHint.textContent = "Capacity and sample size will be auto-filled based on the selected area.";
+      generateBtn.textContent = "Generate Location Audits";
+    } else {
+      bedCountLabel.textContent = "Total Beds in Ward:";
+      bedsToAuditLabel.textContent = "Beds to Audit (sample size):";
+      wardHint.textContent = "Capacity and sample size will be auto-filled based on the selected ward.";
+      generateBtn.textContent = "Generate Bed Audits";
+    }
   } else {
     bedCountInput.value = "";
     bedsToAuditInput.value = "";
+    bedCountInput.readOnly = false;
+
+    bedCountLabel.textContent = "Total Beds in Ward:";
+    bedsToAuditLabel.textContent = "Beds to Audit (sample size):";
+    wardHint.textContent = "Capacity and sample size will be auto-filled based on the selected ward/area.";
+    generateBtn.textContent = "Generate Bed Audits";
   }
+
   document.getElementById("auditContainer").innerHTML = "";
 }
 
@@ -460,24 +623,38 @@ function generateAudits() {
   const bedsToAudit = parseInt(document.getElementById("bedsToAudit").value, 10);
   const container = document.getElementById("auditContainer");
 
-  if (!ward) return alert("Please select a ward.");
-  if (!bedCount || bedCount < 1) return alert("Please ensure the total number of beds is valid.");
-  if (!bedsToAudit || bedsToAudit < 1) return alert("Please ensure the number of beds to audit is valid.");
-  if (ward !== "ED" && bedsToAudit > bedCount) return alert("Beds to audit cannot exceed ward capacity.");
+  const config = WARD_CONFIG[ward];
+  const terms = getUnitTerms(ward);
+
+  if (!ward) return alert("Please select a ward/area.");
+  if (!bedCount || bedCount < 1) return alert("Please ensure the capacity value is valid.");
+  if (!bedsToAudit || bedsToAudit < 1) return alert("Please ensure the sample size value is valid.");
+  if (ward !== "ED" && bedsToAudit > bedCount) return alert(`Items to audit cannot exceed the total ${terms.plural} in the area.`);
 
   container.innerHTML = "";
 
   let selections = [];
+
   if (ward === "ED") {
     selections = generateEDSelection(bedsToAudit);
-  } else {
-    const bedNumbers = [];
-    while (bedNumbers.length < bedsToAudit) {
-      const n = Math.floor(Math.random() * bedCount) + 1;
-      if (!bedNumbers.includes(n)) bedNumbers.push(n);
+  } else if (config && config.auditMode === "full") {
+    // FULL AUDIT (Operating Theatres etc.)
+    if (Array.isArray(config.labels) && config.labels.length) {
+      selections = config.labels.slice();
+    } else {
+      // fallback: audit everything 1..capacity
+      selections = Array.from({ length: bedCount }, (_, i) => `${terms.singular[0].toUpperCase()}${terms.singular.slice(1)} ${i + 1}`);
     }
-    bedNumbers.sort((a, b) => a - b);
-    selections = bedNumbers.map(n => `Bed ${n}`);
+  } else {
+    // RANDOM SAMPLE (default ward behaviour)
+    const nums = [];
+    while (nums.length < bedsToAudit) {
+      const n = Math.floor(Math.random() * bedCount) + 1;
+      if (!nums.includes(n)) nums.push(n);
+    }
+    nums.sort((a, b) => a - b);
+    // Keep "Bed X" for legacy wards (and because your CSV column is "Bed")
+    selections = nums.map(n => `Bed ${n}`);
   }
 
   selections.forEach((label, index) => {
@@ -530,7 +707,7 @@ function formatPct(num) {
   return `${tidy}%`;
 }
 
-/* UPDATED: CSV layout like your screenshot (right-side ward panel column) */
+/* CSV layout like your screenshot (right-side ward panel column) */
 function auditsToCSV(audits) {
   const header = ["Date","Auditor","Ward","Bed","Single/Isolation Room","Compliance (%)","Non-compliant Items"]
     .concat(QUESTIONS.map((_, i) => `Q${i + 1}`))
@@ -563,7 +740,7 @@ function auditsToCSV(audits) {
       a.ward,
       a.bed,
       a.isolationRoom,
-      a.compliance,               // already stored as number-string; keep as-is
+      a.compliance,
       a.nonCompliantItems
     ]
     .map(csvEscape)
@@ -629,7 +806,7 @@ async function submitAudits() {
   const blocks = document.querySelectorAll(".audit-block");
 
   if (!auditor || !ward || blocks.length === 0) {
-    alert("Please fill auditor, select ward and generate the audits first.");
+    alert("Please fill auditor, select ward/area and generate the audits first.");
     return;
   }
 
@@ -662,7 +839,7 @@ async function submitAudits() {
     });
 
     const complianceNum = (yesCount / QUESTIONS.length) * 100;
-    const compliance = complianceNum.toFixed(1); // keep numeric-looking string (as before)
+    const compliance = complianceNum.toFixed(1);
 
     audits.push({
       date, auditor, ward, bed,
